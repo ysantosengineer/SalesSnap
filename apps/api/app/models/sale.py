@@ -3,7 +3,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Date, DateTime, ForeignKey, Numeric, Uuid, func
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Numeric, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
@@ -18,6 +18,11 @@ if TYPE_CHECKING:
 
 class Sale(UUIDTimestampMixin, Base):
     __tablename__ = "sales"
+    __table_args__ = (
+        CheckConstraint("quantity > 0", name="ck_sales_quantity_positive"),
+        CheckConstraint("unit_price >= 0", name="ck_sales_unit_price_nonnegative"),
+        CheckConstraint("revenue >= 0", name="ck_sales_revenue_nonnegative"),
+    )
 
     company_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("companies.id"), nullable=False)
     dataset_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("datasets.id"), nullable=False)
