@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: sales_snap
+      POSTGRES_USER: sales_snap
+      POSTGRES_PASSWORD: sales_snap
+    ports:
+      - "5432:5432"
+    volumes:
+      - sales_snap_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sales_snap -d sales_snap"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  sales_snap_postgres_data:
