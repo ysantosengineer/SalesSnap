@@ -5,9 +5,9 @@ Revises:
 Create Date: 2026-09-19
 """
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 revision = "20260919_01"
 down_revision = None
@@ -21,8 +21,18 @@ def upgrade() -> None:
         "companies",
         sa.Column("id", uuid_type, primary_key=True),
         sa.Column("name", sa.String(length=255), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
     )
     op.create_table(
         "datasets",
@@ -31,8 +41,18 @@ def upgrade() -> None:
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("source_type", sa.String(length=50), nullable=False),
         sa.Column("status", sa.String(length=50), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
     )
     op.create_index("ix_datasets_company_id", "datasets", ["company_id"])
     for table in ("products", "customers"):
@@ -43,11 +63,25 @@ def upgrade() -> None:
         ]
         if table == "products":
             columns.append(sa.Column("name", sa.String(length=255), nullable=False))
-        columns.extend([
-            sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-            sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-            sa.UniqueConstraint("company_id", "external_id", name=f"uq_{table}_company_external_id"),
-        ])
+        columns.extend(
+            [
+                sa.Column(
+                    "created_at",
+                    sa.DateTime(timezone=True),
+                    server_default=sa.text("now()"),
+                    nullable=False,
+                ),
+                sa.Column(
+                    "updated_at",
+                    sa.DateTime(timezone=True),
+                    server_default=sa.text("now()"),
+                    nullable=False,
+                ),
+                sa.UniqueConstraint(
+                    "company_id", "external_id", name=f"uq_{table}_company_external_id"
+                ),
+            ]
+        )
         op.create_table(table, *columns)
         op.create_index(f"ix_{table}_company_id", table, ["company_id"])
     op.create_table(
@@ -61,8 +95,18 @@ def upgrade() -> None:
         sa.Column("quantity", sa.Numeric(14, 3), nullable=False),
         sa.Column("unit_price", sa.Numeric(14, 2), nullable=False),
         sa.Column("revenue", sa.Numeric(16, 2), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.CheckConstraint("quantity > 0", name="ck_sales_quantity_positive"),
         sa.CheckConstraint("unit_price >= 0", name="ck_sales_unit_price_nonnegative"),
         sa.CheckConstraint("revenue >= 0", name="ck_sales_revenue_nonnegative"),

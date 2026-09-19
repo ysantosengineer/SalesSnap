@@ -10,7 +10,9 @@ from app.models.sale import Sale
 
 
 def get_product(session: Session, company_id: uuid.UUID, product_id: uuid.UUID) -> Product | None:
-    return session.scalar(select(Product).where(Product.company_id == company_id, Product.id == product_id))
+    return session.scalar(
+        select(Product).where(Product.company_id == company_id, Product.id == product_id)
+    )
 
 
 def get_products(session: Session, company_id: uuid.UUID) -> list[Product]:
