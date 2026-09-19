@@ -1,7 +1,7 @@
 # Roadmap
 
 1. Project Foundation
-2. Database & Multi-tenancy
+2. Database & Multi-tenancy — In progress
 3. Authentication
 4. CSV Import
 5. Sales Dashboard
