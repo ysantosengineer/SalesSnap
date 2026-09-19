@@ -1,7 +1,7 @@
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, String, Uuid
+from sqlalchemy import ForeignKey, String, Uuid, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 
 class Customer(UUIDTimestampMixin, Base):
     __tablename__ = "customers"
+    __table_args__ = (UniqueConstraint("company_id", "external_id", name="uq_customers_company_external_id"),)
 
     company_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("companies.id"), nullable=False)
     external_id: Mapped[str] = mapped_column(String(255), nullable=False)
