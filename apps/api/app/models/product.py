@@ -16,7 +16,9 @@ class Product(UUIDTimestampMixin, Base):
     __tablename__ = "products"
     __table_args__ = (UniqueConstraint("company_id", "external_id", name="uq_products_company_external_id"),)
 
-    company_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("companies.id"), nullable=False)
+    company_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("companies.id"), nullable=False, index=True
+    )
     external_id: Mapped[str] = mapped_column(String(255), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     company: Mapped["Company"] = relationship(back_populates="products")
