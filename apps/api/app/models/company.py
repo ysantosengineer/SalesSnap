@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from app.models.dataset import Dataset
     from app.models.product import Product
     from app.models.sale import Sale
+    from app.models.user import User
 
 
 class Company(UUIDTimestampMixin, Base):
@@ -21,3 +22,4 @@ class Company(UUIDTimestampMixin, Base):
     products: Mapped[list["Product"]] = relationship(back_populates="company")
     customers: Mapped[list["Customer"]] = relationship(back_populates="company")
     sales: Mapped[list["Sale"]] = relationship(back_populates="company")
+    users: Mapped[list["User"]] = relationship(back_populates="company")
