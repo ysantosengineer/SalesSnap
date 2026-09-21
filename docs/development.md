@@ -7,3 +7,5 @@ Copy `.env.example` to `.env` and adjust values if needed. Start PostgreSQL with
 Run the frontend from `apps/web` with `npm install` then `npm run dev`; open `http://localhost:3000`.
 
 Validation commands: `python -m ruff check apps/api`, `python -m pytest apps/api`, `npm run lint` (in `apps/web`), and `npm run build` (in `apps/web`).
+
+After applying the Alembic migration, seed two small isolated development tenants from `apps/api` with `python scripts/seed_development.py`. The seed creates Company A and Company B only when they do not already exist, so it is safe to run repeatedly.
