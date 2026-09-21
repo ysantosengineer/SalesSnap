@@ -24,7 +24,9 @@ def test_alembic_migrates_empty_postgres_database() -> None:
     previous_url = os.environ.get("DATABASE_URL")
     os.environ["DATABASE_URL"] = database_url
     get_settings.cache_clear()
-    config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
+    api_directory = Path(__file__).parents[1]
+    config = Config(str(api_directory / "alembic.ini"))
+    config.set_main_option("script_location", str(api_directory / "alembic"))
     try:
         command.downgrade(config, "base")
         command.upgrade(config, "head")
