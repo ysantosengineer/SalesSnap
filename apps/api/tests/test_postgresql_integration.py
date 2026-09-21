@@ -1,6 +1,7 @@
 import os
 from datetime import date
 from decimal import Decimal
+from pathlib import Path
 
 import pytest
 from alembic.config import Config
@@ -23,7 +24,7 @@ def test_alembic_migrates_empty_postgres_database() -> None:
     previous_url = os.environ.get("DATABASE_URL")
     os.environ["DATABASE_URL"] = database_url
     get_settings.cache_clear()
-    config = Config("alembic.ini")
+    config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     try:
         command.downgrade(config, "base")
         command.upgrade(config, "head")
