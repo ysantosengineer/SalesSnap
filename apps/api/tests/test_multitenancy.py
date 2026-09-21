@@ -2,12 +2,12 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.db.session import Base
 from app.db.seed import seed_development_data
+from app.db.session import Base
 from app.models import Company, Customer, Dataset, Product, Sale
 from app.services.tenant_data import get_product, get_products
 
