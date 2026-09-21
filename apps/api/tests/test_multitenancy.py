@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.db.session import Base
+from app.db.seed import seed_development_data
 from app.models import Company, Customer, Dataset, Product, Sale
 from app.services.tenant_data import get_product, get_products
 
@@ -49,12 +50,10 @@ def test_external_ids_are_unique_per_company(session: Session) -> None:
     first, second = Company(name="A"), Company(name="B")
     session.add_all([first, second])
     session.flush()
-    session.add_all(
-        [
-            Product(company_id=first.id, external_id="same", name="One"),
-            Product(company_id=second.id, external_id="same", name="Two"),
-        ]
-    )
+    session.add_all([
+        Product(company_id=first.id, external_id="same", name="One"),
+        Product(company_id=second.id, external_id="same", name="Two"),
+    ])
     session.commit()
     session.add(Product(company_id=first.id, external_id="same", name="Duplicate"))
     with pytest.raises(IntegrityError):
@@ -71,3 +70,11 @@ def test_tenant_queries_do_not_cross_company_boundaries(session: Session) -> Non
     session.commit()
     assert get_products(session, first.id) == [product_a]
     assert get_product(session, first.id, product_b.id) is None
+
+
+def test_development_seed_is_idempotent(session: Session) -> None:
+    seed_development_data(session)
+    seed_development_data(session)
+
+    assert len(session.scalars(select(Company)).all()) == 2
+    assert len(session.scalars(select(Sale)).all()) == 2
