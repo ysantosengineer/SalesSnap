@@ -3,7 +3,13 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from app.core.security import create_access_token, create_refresh_token, hash_password, hash_token, verify_password
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    hash_password,
+    hash_token,
+    verify_password,
+)
 from app.models import Company, RefreshToken, User
 
 
@@ -32,7 +38,9 @@ def authenticate_user(session: Session, email: str, password: str) -> User | Non
 
 def issue_session(session: Session, user: User) -> tuple[str, str]:
     refresh_token, expires_at = create_refresh_token(user.id)
-    session.add(RefreshToken(user_id=user.id, token_hash=hash_token(refresh_token), expires_at=expires_at))
+    session.add(
+        RefreshToken(user_id=user.id, token_hash=hash_token(refresh_token), expires_at=expires_at)
+    )
     session.commit()
     return create_access_token(user.id), refresh_token
 
@@ -41,10 +49,14 @@ def rotate_refresh_token(session: Session, refresh_token: str) -> tuple[User, st
     from app.core.security import decode_token
 
     payload = decode_token(refresh_token, "refresh")
-    token = session.scalar(select(RefreshToken).where(RefreshToken.token_hash == hash_token(refresh_token)))
+    token = session.scalar(
+        select(RefreshToken).where(RefreshToken.token_hash == hash_token(refresh_token))
+    )
     if token is None or token.revoked_at is not None or token.expires_at <= datetime.now(UTC):
         return None
-    user = session.scalar(select(User).options(joinedload(User.company)).where(User.id == payload["sub"]))
+    user = session.scalar(
+        select(User).options(joinedload(User.company)).where(User.id == payload["sub"])
+    )
     if user is None or not user.is_active:
         return None
     token.revoked_at = datetime.now(UTC)
@@ -53,7 +65,9 @@ def rotate_refresh_token(session: Session, refresh_token: str) -> tuple[User, st
 
 
 def revoke_refresh_token(session: Session, refresh_token: str) -> None:
-    token = session.scalar(select(RefreshToken).where(RefreshToken.token_hash == hash_token(refresh_token)))
+    token = session.scalar(
+        select(RefreshToken).where(RefreshToken.token_hash == hash_token(refresh_token))
+    )
     if token is not None and token.revoked_at is None:
         token.revoked_at = datetime.now(UTC)
         session.commit()

@@ -50,10 +50,12 @@ def test_external_ids_are_unique_per_company(session: Session) -> None:
     first, second = Company(name="A"), Company(name="B")
     session.add_all([first, second])
     session.flush()
-    session.add_all([
-        Product(company_id=first.id, external_id="same", name="One"),
-        Product(company_id=second.id, external_id="same", name="Two"),
-    ])
+    session.add_all(
+        [
+            Product(company_id=first.id, external_id="same", name="One"),
+            Product(company_id=second.id, external_id="same", name="Two"),
+        ]
+    )
     session.commit()
     session.add(Product(company_id=first.id, external_id="same", name="Duplicate"))
     with pytest.raises(IntegrityError):
