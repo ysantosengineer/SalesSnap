@@ -4,6 +4,8 @@ SalesSnap is a SaaS sales-intelligence product. It will progressively combine co
 
 `/Skills` is the permanent source of project engineering instructions. Before starting any development stage, read **every** Markdown file in this directory, inspect the repository, and preserve existing decisions. Document an official architectural change in the relevant Skill; do not silently change architecture. Do not anticipate future-stage features: favor simplicity and incremental evolution. Make small, meaningful commits for each logical unit.
 
+Authentication decisions are permanent project rules and are documented in `authentication-standards.md`; read it together with every other Skill before modifying authentication or protected APIs.
+
 Before starting any development stage:
 
 1. Read every Markdown file inside /Skills.

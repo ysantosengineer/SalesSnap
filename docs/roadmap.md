@@ -2,7 +2,7 @@
 
 1. Project Foundation
 2. Database & Multi-tenancy — Completed
-3. Authentication
+3. Authentication — Completed
 4. CSV Import
 5. Sales Dashboard
 6. RFM Segmentation
