@@ -3,12 +3,12 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
-from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from alembic import command
 from app.core.config import get_settings
 from app.core.security import hash_password
 from app.models import Company, RefreshToken, User
