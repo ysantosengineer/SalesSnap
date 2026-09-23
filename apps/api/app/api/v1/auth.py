@@ -126,11 +126,10 @@ def logout(
     response: Response,
     refresh_token: str | None = Cookie(default=None),
     session: Session = Depends(get_db_session),
-) -> Response:
+) -> None:
     if refresh_token is not None:
         revoke_refresh_token(session, refresh_token)
     response.delete_cookie("refresh_token", path="/api/v1/auth")
-    return response
 
 
 @router.get("/me", response_model=UserResponse)

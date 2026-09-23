@@ -1,3 +1,4 @@
+import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy import select
@@ -52,16 +53,25 @@ def rotate_refresh_token(session: Session, refresh_token: str) -> tuple[User, st
     token = session.scalar(
         select(RefreshToken).where(RefreshToken.token_hash == hash_token(refresh_token))
     )
-    if token is None or token.revoked_at is not None or token.expires_at <= datetime.now(UTC):
+    if token is None or token.revoked_at is not None or is_expired(token.expires_at):
         return None
     user = session.scalar(
-        select(User).options(joinedload(User.company)).where(User.id == payload["sub"])
+        select(User)
+        .options(joinedload(User.company))
+        .where(User.id == uuid.UUID(str(payload["sub"])))
     )
     if user is None or not user.is_active:
         return None
     token.revoked_at = datetime.now(UTC)
     access_token, new_refresh_token = issue_session(session, user)
     return user, access_token, new_refresh_token
+
+
+def is_expired(expires_at: datetime) -> bool:
+    """Compare refresh expiry timestamps from databases with different timezone support."""
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=UTC)
+    return expires_at <= datetime.now(UTC)
 
 
 def revoke_refresh_token(session: Session, refresh_token: str) -> None:
