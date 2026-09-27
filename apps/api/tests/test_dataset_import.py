@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import Base
 from app.models import Company, Customer, Dataset, Product, Sale
+from app.services import dataset_import
 from app.services.dataset_import import DatasetImportFailure, get_dataset, import_sales_dataset
 
 CSV_HEADER = b"date,customer_id,product_id,product_name,quantity,unit_price\n"
@@ -97,3 +98,28 @@ def test_dataset_lookup_is_scoped_to_company() -> None:
         assert get_dataset(session, company_a.id, result.dataset_id) is not None
         assert get_dataset(session, company_b.id, result.dataset_id) is None
         assert get_dataset(session, company_b.id, uuid.uuid4()) is None
+
+
+def test_unexpected_persistence_failure_marks_dataset_failed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with create_session() as session:
+        company = Company(name="Acme")
+        session.add(company)
+        session.commit()
+
+        class BrokenSale:
+            def __init__(self, **_: object) -> None:
+                raise RuntimeError("simulated persistence failure")
+
+        monkeypatch.setattr(dataset_import, "Sale", BrokenSale)
+        with pytest.raises(RuntimeError, match="simulated persistence failure"):
+            import_sales_dataset(
+                session,
+                company.id,
+                "sales.csv",
+                CSV_HEADER + b"2026-09-01,C001,P001,Mouse,1,10\n",
+            )
+
+        assert session.query(Dataset).one().status == "failed"
+        assert session.query(Sale).count() == 0
