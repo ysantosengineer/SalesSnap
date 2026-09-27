@@ -1,7 +1,9 @@
+import uuid
+
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
-from fastapi.testclient import TestClient
 
 from app.core.security import create_access_token, hash_password
 from app.db.session import Base, get_db_session
@@ -26,7 +28,9 @@ def test_authenticated_upload_uses_current_users_company() -> None:
     with create_session() as session:
         company = Company(name="Acme")
         user = User(
-            company=company, email="owner@acme.test", password_hash=hash_password("password")
+            company=company,
+            email="owner@acme.test",
+            password_hash=hash_password("password"),
         )
         session.add(user)
         session.commit()
@@ -77,7 +81,9 @@ def test_import_rejects_non_csv_file_before_processing() -> None:
     with create_session() as session:
         company = Company(name="Acme")
         user = User(
-            company=company, email="owner@acme.test", password_hash=hash_password("password")
+            company=company,
+            email="owner@acme.test",
+            password_hash=hash_password("password"),
         )
         session.add(user)
         session.commit()
@@ -92,6 +98,3 @@ def test_import_rejects_non_csv_file_before_processing() -> None:
             app.dependency_overrides.clear()
 
         assert response.status_code == 415
-
-
-import uuid
