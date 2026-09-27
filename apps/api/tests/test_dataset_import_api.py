@@ -1,10 +1,14 @@
 import uuid
+from asyncio import run
 
+import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
+from app.api.v1.datasets import UPLOAD_READ_CHUNK_BYTES, read_limited_upload
 from app.core.security import create_access_token, hash_password
 from app.db.session import Base, get_db_session
 from app.main import app
@@ -14,6 +18,33 @@ CSV_CONTENT = (
     b"date,customer_id,product_id,product_name,quantity,unit_price\n"
     b"2026-09-01,C001,P001,Mouse,2,149.90\n"
 )
+
+
+class ChunkedUpload:
+    def __init__(self, chunks: list[bytes]) -> None:
+        self.chunks = chunks
+        self.read_calls = 0
+        self.was_closed = False
+
+    async def read(self, size: int) -> bytes:
+        assert size == UPLOAD_READ_CHUNK_BYTES
+        self.read_calls += 1
+        return self.chunks.pop(0) if self.chunks else b""
+
+    async def close(self) -> None:
+        self.was_closed = True
+
+
+def test_limited_upload_reader_stops_before_reading_remaining_file() -> None:
+    upload = ChunkedUpload([b"four", b"x", b"unread"])
+
+    with pytest.raises(HTTPException) as failure:
+        run(read_limited_upload(upload, 4))  # type: ignore[arg-type]
+
+    assert getattr(failure.value, "status_code", None) == 413
+    assert upload.read_calls == 2
+    assert upload.chunks == [b"unread"]
+    assert upload.was_closed
 
 
 def create_session() -> Session:

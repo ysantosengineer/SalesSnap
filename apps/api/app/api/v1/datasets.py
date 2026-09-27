@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.api.v1.auth import get_current_user
@@ -17,21 +17,21 @@ from app.services.dataset_import import (
 
 router = APIRouter(prefix="/datasets", tags=["datasets"])
 CSV_CONTENT_TYPES = {"text/csv", "application/csv", "application/vnd.ms-excel"}
+UPLOAD_READ_CHUNK_BYTES = 64 * 1024
+MAX_MULTIPART_OVERHEAD_BYTES = 64 * 1024
 
 
 @router.post("/import", response_model=DatasetImportResponse, status_code=status.HTTP_201_CREATED)
 async def import_csv(
+    request: Request,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> DatasetImportResponse:
     dataset_name = validate_csv_file(file)
-    content = await file.read()
-    if len(content) > get_settings().max_upload_size_mb * 1024 * 1024:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="CSV file exceeds the configured upload size limit",
-        )
+    max_upload_bytes = get_settings().max_upload_size_mb * 1024 * 1024
+    reject_oversized_content_length(request, max_upload_bytes)
+    content = await read_limited_upload(file, max_upload_bytes)
     try:
         return import_sales_dataset(session, current_user.company_id, dataset_name, content)
     except DatasetImportFailure as error:
@@ -88,3 +88,32 @@ def validate_csv_file(file: UploadFile) -> str:
             detail="Only CSV files are supported",
         )
     return filename[:255]
+
+
+def reject_oversized_content_length(request: Request, max_upload_bytes: int) -> None:
+    content_length = request.headers.get("content-length")
+    try:
+        request_size = int(content_length) if content_length is not None else 0
+    except ValueError:
+        return
+    if request_size > max_upload_bytes + MAX_MULTIPART_OVERHEAD_BYTES:
+        raise file_too_large_error()
+
+
+async def read_limited_upload(file: UploadFile, max_upload_bytes: int) -> bytes:
+    chunks: list[bytes] = []
+    received_bytes = 0
+    while chunk := await file.read(UPLOAD_READ_CHUNK_BYTES):
+        received_bytes += len(chunk)
+        if received_bytes > max_upload_bytes:
+            await file.close()
+            raise file_too_large_error()
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+def file_too_large_error() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+        detail="CSV file exceeds the configured upload size limit",
+    )
