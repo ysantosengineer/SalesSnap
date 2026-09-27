@@ -7,8 +7,8 @@ from sqlalchemy.orm import Session
 
 from app.db.session import Base
 from app.models import Company, Customer, Dataset, Product, Sale
-from app.services.dataset_import import DatasetImportFailure, get_dataset, import_sales_dataset
 from app.services import dataset_import
+from app.services.dataset_import import DatasetImportFailure, get_dataset, import_sales_dataset
 
 CSV_HEADER = b"date,customer_id,product_id,product_name,quantity,unit_price\n"
 
