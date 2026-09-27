@@ -1,7 +1,7 @@
-from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
+from fastapi.testclient import TestClient
 
 from app.core.security import create_access_token, hash_password
 from app.db.session import Base, get_db_session
@@ -43,7 +43,7 @@ def test_authenticated_upload_uses_current_users_company() -> None:
         assert response.status_code == 201
         body = response.json()
         assert body["status"] == "completed"
-        assert session.get(Dataset, body["dataset_id"]).company_id == company.id
+        assert session.get(Dataset, uuid.UUID(body["dataset_id"])).company_id == company.id
 
 
 def test_dataset_endpoint_prevents_cross_tenant_access() -> None:
@@ -92,3 +92,6 @@ def test_import_rejects_non_csv_file_before_processing() -> None:
             app.dependency_overrides.clear()
 
         assert response.status_code == 415
+
+
+import uuid
