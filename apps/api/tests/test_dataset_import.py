@@ -7,8 +7,8 @@ from sqlalchemy.orm import Session
 
 from app.db.session import Base
 from app.models import Company, Customer, Dataset, Product, Sale
-from app.services import dataset_import
 from app.services.dataset_import import DatasetImportFailure, get_dataset, import_sales_dataset
+from app.services import dataset_import
 
 CSV_HEADER = b"date,customer_id,product_id,product_name,quantity,unit_price\n"
 
@@ -26,7 +26,8 @@ def test_import_persists_tenant_data_and_reports_partial_rejections() -> None:
         session.commit()
         content = (
             CSV_HEADER
-            + b"2026-09-01,C001,P001,Mouse,2,149.90\n2026-99-99,C002,P002,Monitor,1,1299.90\n"
+            + b"2026-09-01,C001,P001,Mouse,2,149.90\n"
+            + b"2026-99-99,C002,P002,Monitor,1,1299.90\n"
         )
 
         result = import_sales_dataset(session, company.id, "sales.csv", content)
