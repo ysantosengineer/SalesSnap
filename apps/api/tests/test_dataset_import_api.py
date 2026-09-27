@@ -47,6 +47,17 @@ def test_limited_upload_reader_stops_before_reading_remaining_file() -> None:
     assert upload.was_closed
 
 
+def test_middleware_rejects_clearly_oversized_multipart_before_route_processing() -> None:
+    oversized_content = b"x" * (10 * 1024 * 1024 + 64 * 1024 + 1)
+
+    response = TestClient(app).post(
+        "/api/v1/datasets/import",
+        files={"file": ("sales.csv", oversized_content, "text/csv")},
+    )
+
+    assert response.status_code == 413
+
+
 def create_session() -> Session:
     engine = create_engine(
         "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool

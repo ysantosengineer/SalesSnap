@@ -2,7 +2,7 @@
 
 Stage 4 defines the SalesSnap CSV V1 ingestion contract.
 
-- Accept only UTF-8 CSV files up to `MAX_UPLOAD_SIZE_MB` (10 MB by default). Excel, JSON, archives, and chunked/background ingestion are out of scope.
+- Accept only UTF-8 CSV files up to `MAX_UPLOAD_SIZE_MB` (10 MB by default). Reject clearly oversized requests from `Content-Length` before multipart parsing, then enforce the exact file limit with bounded chunk reads; never use an unbounded upload read. Excel, JSON, archives, and chunked/background ingestion are out of scope.
 - The required columns are exactly `date`, `customer_id`, `product_id`, `product_name`, `quantity`, and `unit_price`. Dates use `YYYY-MM-DD`; quantity is a positive integer; price is a non-negative `Decimal`.
 - Pandas reads, normalizes, and validates CSV values. It does not handle HTTP, authentication, database transactions, or authorization.
 - The authenticated user's `company_id` is the only tenant source. Never trust a tenant identifier in a request or CSV file.
