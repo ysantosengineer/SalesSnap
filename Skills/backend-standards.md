@@ -18,3 +18,5 @@ apps/api/app/
 Do not create empty directories solely to satisfy this suggestion.
 
 For tenant-owned persistence, use small explicit service functions that receive `company_id`. Do not add a generic repository framework until repeated requirements justify it.
+
+For uploads, keep HTTP file validation in API routes, Pandas parsing in dedicated parser services, and lifecycle/persistence orchestration in import services.

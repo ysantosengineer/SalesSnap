@@ -6,6 +6,8 @@ SalesSnap is a SaaS sales-intelligence product. It will progressively combine co
 
 Authentication decisions are permanent project rules and are documented in `authentication-standards.md`; read it together with every other Skill before modifying authentication or protected APIs.
 
+Data-import decisions are permanent project rules and are documented in `data-ingestion-standards.md`; read it together with every other Skill before modifying CSV ingestion or Dataset persistence.
+
 Before starting any development stage:
 
 1. Read every Markdown file inside /Skills.

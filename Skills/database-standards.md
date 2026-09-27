@@ -7,3 +7,5 @@ Add relationships and indexes only with justification. Design toward future mult
 ## Multi-tenancy and data conventions
 
 SalesSnap uses a shared PostgreSQL database and shared schema with `company_id` as the tenant discriminator. Every tenant-owned query must explicitly include `company_id`; cross-company access must return no data. Domain primary keys use UUID consistently. Store money as Python `Decimal` and PostgreSQL `NUMERIC`, never `float`. Audit timestamps are timezone-aware UTC database timestamps with `created_at` and `updated_at` where mutable records require both. Alembic is the sole schema-evolution mechanism.
+
+CSV import revenue is calculated server-side from quantity and unit price. Products and customers resolve tenant-scoped external identities with the database uniqueness constraints already defined for `(company_id, external_id)`.
