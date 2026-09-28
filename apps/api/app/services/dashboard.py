@@ -18,17 +18,16 @@ from app.schemas.dashboard import (
 def get_summary(
     session: Session, company_id: uuid.UUID, start_date: date | None, end_date: date | None
 ) -> DashboardSummary:
-    total_revenue, units_sold, sales_records, active_customers, average_sale_value = (
-        session.execute(
-            select(
-                func.coalesce(func.sum(Sale.revenue), Decimal("0")),
-                func.coalesce(func.sum(Sale.quantity), Decimal("0")),
-                func.count(Sale.id),
-                func.count(distinct(Sale.customer_id)),
-                func.coalesce(func.avg(Sale.revenue), Decimal("0")),
-            ).where(*sales_filters(company_id, start_date, end_date))
-        ).one()
-    )
+    summary_row = session.execute(
+        select(
+            func.coalesce(func.sum(Sale.revenue), Decimal("0")),
+            func.coalesce(func.sum(Sale.quantity), Decimal("0")),
+            func.count(Sale.id),
+            func.count(distinct(Sale.customer_id)),
+            func.coalesce(func.avg(Sale.revenue), Decimal("0")),
+        ).where(*sales_filters(company_id, start_date, end_date))
+    ).one()
+    total_revenue, units_sold, sales_records, active_customers, average_sale_value = summary_row
     return DashboardSummary(
         total_revenue=total_revenue,
         units_sold=units_sold,
