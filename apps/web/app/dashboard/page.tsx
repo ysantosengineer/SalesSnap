@@ -16,14 +16,20 @@ export default function DashboardPage() {
   const [endDate, setEndDate] = useState("");
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const load = () => {
     if (!accessToken) return;
     setLoading(true); setError(null);
     getDashboard(accessToken, startDate, endDate).then(setData).catch((cause: Error) => setError(cause.message)).finally(() => setLoading(false));
   };
   useEffect(() => { if (!isLoading && !user) router.replace("/login"); }, [isLoading, router, user]);
-  useEffect(() => { if (accessToken) load(); }, [accessToken]);
+  useEffect(() => {
+    if (!accessToken) return;
+    getDashboard(accessToken)
+      .then(setData)
+      .catch((cause: Error) => setError(cause.message))
+      .finally(() => setLoading(false));
+  }, [accessToken]);
   if (isLoading || !user) return <main className="p-8">Loading...</main>;
   const summary = data?.summary;
   const maxRevenue = Math.max(...(data?.series.map((point) => Number(point.revenue)) ?? [1]), 1);
