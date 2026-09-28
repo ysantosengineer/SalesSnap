@@ -11,6 +11,7 @@ SalesSnap is a modular SaaS application for sales intelligence. It currently pro
 - Sales CSV V1 ingestion with Pandas, Decimal money handling, partial row rejection, and import summaries.
 - Tenant-scoped descriptive sales dashboard with KPI cards, date filters, revenue history, and top products.
 - Tenant-scoped Customer Analytics RFM summary and segmentation page, calculated from persisted sales data.
+- Tenant-scoped daily product demand forecasting with evaluated baseline and ML-model selection.
 
 ## Architecture
 
@@ -39,6 +40,10 @@ See [CSV format documentation](./docs/sales-csv-format.md) and [data ingestion a
 Authenticated users can view customer segments at `/customers/segments`. The API provides company-scoped RFM results at `GET /api/v1/analytics/rfm/summary` and `GET /api/v1/analytics/rfm/customers`.
 
 RFM is descriptive analysis of persisted customer sales: recency, sales-record frequency, and revenue. It does not perform demand forecasting, anomaly detection, recommendations, or AI analysis. See [RFM segmentation](./docs/rfm-segmentation.md) for scoring rules and API behavior.
+
+## Demand forecasting
+
+Authenticated users can open `/forecast` to select a product and a 7-, 14-, or 30-day horizon. Forecasting uses historical daily `SUM(quantity)`, not revenue. See [demand forecasting](./docs/demand-forecasting.md) for the model, metrics, and limitations.
 
 ## Local development
 
@@ -78,6 +83,6 @@ Read every Markdown file in [Skills](./Skills) before changing the project. Thes
 
 ## Roadmap
 
-Completed: Project Foundation, Database & Multi-tenancy, Authentication & Tenant Context, CSV Import & Data Ingestion, Sales Dashboard, and RFM Segmentation.
+Completed: Project Foundation, Database & Multi-tenancy, Authentication & Tenant Context, CSV Import & Data Ingestion, Sales Dashboard, RFM Segmentation, and Demand Forecasting.
 
 See [docs/roadmap.md](./docs/roadmap.md) for the planned stages.

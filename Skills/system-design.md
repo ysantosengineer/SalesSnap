@@ -13,3 +13,5 @@ Keep APIs stateless where practical and the database as the source of truth. Pla
 The initial tenancy implementation is shared database, shared schema, and a `company_id` discriminator. A company owns datasets, products, customers, and sales; services must make the tenant scope explicit rather than relying on implicit global context.
 
 CSV ingestion is synchronous in the modular monolith: authenticated upload → parser → Dataset lifecycle → tenant-scoped persistence → import summary. It is intentionally separate from analytics and presentation.
+
+Demand forecasting is on-demand and product-scoped: authenticated tenant → PostgreSQL daily quantity aggregation → Pandas features → scikit-learn evaluation and recursive forecast → API response. Models are not persisted in V1.

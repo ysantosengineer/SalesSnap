@@ -6,7 +6,7 @@
 4. CSV Import — Completed
 5. Sales Dashboard — Completed
 6. RFM Segmentation — Completed
-7. Demand Forecasting
+7. Demand Forecasting — Completed
 8. Anomaly Detection
 9. Stock-out Risk
 10. AI Insights

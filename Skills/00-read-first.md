@@ -12,6 +12,8 @@ Analytics decisions are permanent project rules and are documented in `analytics
 
 Customer Analytics and RFM decisions are permanent project rules and are documented in `customer-analytics-standards.md`; read it together with every other Skill before modifying customer segmentation, RFM scores, or related endpoints.
 
+Machine-learning and demand-forecasting decisions are permanent project rules in `ml-standards.md`; read it before changing forecasting, analytical models, features, or metrics.
+
 Before starting any development stage:
 
 1. Read every Markdown file inside /Skills.
