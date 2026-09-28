@@ -8,6 +8,18 @@ from app.models import Product, Sale
 
 MINIMUM_OBSERVATIONS = 30
 SUPPORTED_HORIZONS = (7, 14, 30)
+FEATURE_COLUMNS = (
+    "lag_1",
+    "lag_7",
+    "lag_14",
+    "rolling_mean_7",
+    "rolling_mean_14",
+    "rolling_std_7",
+    "day_of_week",
+    "day_of_month",
+    "month",
+    "is_weekend",
+)
 
 
 def get_forecast_product(
@@ -49,3 +61,24 @@ def build_continuous_demand_series(daily_demand: pd.DataFrame) -> pd.DataFrame:
 
 def observation_count(daily_demand: pd.DataFrame) -> int:
     return len(build_continuous_demand_series(daily_demand))
+
+
+def build_demand_features(series: pd.DataFrame) -> pd.DataFrame:
+    frame = series.copy()
+    frame["date"] = pd.to_datetime(frame["date"])
+    history = frame["quantity"].shift(1)
+    frame["lag_1"] = history
+    frame["lag_7"] = frame["quantity"].shift(7)
+    frame["lag_14"] = frame["quantity"].shift(14)
+    frame["rolling_mean_7"] = history.rolling(7).mean()
+    frame["rolling_mean_14"] = history.rolling(14).mean()
+    frame["rolling_std_7"] = history.rolling(7).std().fillna(0)
+    frame["day_of_week"] = frame["date"].dt.dayofweek
+    frame["day_of_month"] = frame["date"].dt.day
+    frame["month"] = frame["date"].dt.month
+    frame["is_weekend"] = (frame["day_of_week"] >= 5).astype(int)
+    return frame
+
+
+def training_rows(series: pd.DataFrame) -> pd.DataFrame:
+    return build_demand_features(series).dropna(subset=FEATURE_COLUMNS).reset_index(drop=True)
