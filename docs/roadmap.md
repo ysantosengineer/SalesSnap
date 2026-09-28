@@ -5,7 +5,7 @@
 3. Authentication — Completed
 4. CSV Import — Completed
 5. Sales Dashboard — Completed
-6. RFM Segmentation
+6. RFM Segmentation — Completed
 7. Demand Forecasting
 8. Anomaly Detection
 9. Stock-out Risk

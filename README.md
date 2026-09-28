@@ -1,6 +1,6 @@
 # SalesSnap
 
-SalesSnap is a modular SaaS application for sales intelligence. It currently provides a tenant-aware foundation for local authentication and validated sales CSV ingestion. Analytics, dashboards, forecasting, machine learning, and generative AI are planned for later stages.
+SalesSnap is a modular SaaS application for sales intelligence. It currently provides tenant-aware authentication, validated sales CSV ingestion, descriptive sales analytics, and customer RFM segmentation. Forecasting, machine learning, and generative AI are planned for later stages.
 
 ## Current capabilities
 
@@ -10,6 +10,7 @@ SalesSnap is a modular SaaS application for sales intelligence. It currently pro
 - PostgreSQL, SQLAlchemy, and Alembic migrations.
 - Sales CSV V1 ingestion with Pandas, Decimal money handling, partial row rejection, and import summaries.
 - Tenant-scoped descriptive sales dashboard with KPI cards, date filters, revenue history, and top products.
+- Tenant-scoped Customer Analytics RFM summary and segmentation page, calculated from persisted sales data.
 
 ## Architecture
 
@@ -32,6 +33,12 @@ date,customer_id,product_id,product_name,quantity,unit_price
 The maximum default file size is 10 MB (`MAX_UPLOAD_SIZE_MB`). Clearly oversized multipart requests are rejected from `Content-Length` before FastAPI parses the form body. Remaining uploads are read in 64 KiB chunks and stop as soon as the actual file exceeds the configured limit; the application does not call an unbounded `read()` for an upload.
 
 See [CSV format documentation](./docs/sales-csv-format.md) and [data ingestion architecture](./docs/data-ingestion.md) for validation rules, lifecycle, and limitations.
+
+## Customer Analytics
+
+Authenticated users can view customer segments at `/customers/segments`. The API provides company-scoped RFM results at `GET /api/v1/analytics/rfm/summary` and `GET /api/v1/analytics/rfm/customers`.
+
+RFM is descriptive analysis of persisted customer sales: recency, sales-record frequency, and revenue. It does not perform demand forecasting, anomaly detection, recommendations, or AI analysis. See [RFM segmentation](./docs/rfm-segmentation.md) for scoring rules and API behavior.
 
 ## Local development
 
@@ -71,6 +78,6 @@ Read every Markdown file in [Skills](./Skills) before changing the project. Thes
 
 ## Roadmap
 
-Completed: Project Foundation, Database & Multi-tenancy, Authentication & Tenant Context, and CSV Import & Data Ingestion.
+Completed: Project Foundation, Database & Multi-tenancy, Authentication & Tenant Context, CSV Import & Data Ingestion, Sales Dashboard, and RFM Segmentation.
 
 See [docs/roadmap.md](./docs/roadmap.md) for the planned stages.
