@@ -1,5 +1,4 @@
 import uuid
-from datetime import date
 
 import pandas as pd
 from sqlalchemy import func, select
