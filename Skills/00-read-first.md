@@ -8,6 +8,8 @@ Authentication decisions are permanent project rules and are documented in `auth
 
 Data-import decisions are permanent project rules and are documented in `data-ingestion-standards.md`; read it together with every other Skill before modifying CSV ingestion or Dataset persistence.
 
+Analytics decisions are permanent project rules and are documented in `analytics-standards.md`; read it together with every other Skill before modifying dashboard metrics or analytics queries.
+
 Before starting any development stage:
 
 1. Read every Markdown file inside /Skills.

@@ -9,6 +9,7 @@ SalesSnap is a modular SaaS application for sales intelligence. It currently pro
 - Company-scoped authentication with JWT access tokens and rotating HttpOnly refresh tokens.
 - PostgreSQL, SQLAlchemy, and Alembic migrations.
 - Sales CSV V1 ingestion with Pandas, Decimal money handling, partial row rejection, and import summaries.
+- Tenant-scoped descriptive sales dashboard with KPI cards, date filters, revenue history, and top products.
 
 ## Architecture
 
