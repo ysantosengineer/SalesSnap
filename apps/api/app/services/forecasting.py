@@ -9,6 +9,13 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models import Product, Sale
+from app.schemas.forecasting import (
+    DemandHistoryPoint,
+    ForecastEvaluation,
+    ForecastPoint,
+    ForecastProduct,
+    ProductForecast,
+)
 
 MINIMUM_OBSERVATIONS = 30
 SUPPORTED_HORIZONS = (7, 14, 30)
@@ -169,3 +176,83 @@ def recursive_forecast(
         future.loc[len(future)] = {"date": next_date, "quantity": prediction}
         predictions.append({"date": next_date, "predicted_quantity": prediction})
     return pd.DataFrame(predictions)
+
+
+def list_forecast_products(session: Session, company_id: uuid.UUID) -> list[ForecastProduct]:
+    rows = session.execute(
+        select(Product, func.min(Sale.sale_date), func.max(Sale.sale_date))
+        .join(Sale, Sale.product_id == Product.id)
+        .where(Product.company_id == company_id, Sale.company_id == company_id)
+        .group_by(Product.id)
+        .order_by(Product.name.asc())
+    )
+    products = []
+    for product, first_date, last_date in rows:
+        observations = (last_date - first_date).days + 1
+        products.append(
+            ForecastProduct(
+                id=product.id,
+                external_id=product.external_id,
+                name=product.name,
+                observations=observations,
+                forecast_available=observations >= MINIMUM_OBSERVATIONS,
+            )
+        )
+    return products
+
+
+def create_product_forecast(
+    session: Session, company_id: uuid.UUID, product: Product, horizon: int
+) -> ProductForecast:
+    demand = build_continuous_demand_series(
+        get_daily_product_demand(session, company_id, product.id)
+    )
+    observations = len(demand)
+    response_product = ForecastProduct(
+        id=product.id,
+        external_id=product.external_id,
+        name=product.name,
+        observations=observations,
+        forecast_available=observations >= MINIMUM_OBSERVATIONS,
+    )
+    if observations < MINIMUM_OBSERVATIONS:
+        return ProductForecast(
+            status="insufficient_data",
+            product=response_product,
+            horizon_days=horizon,
+            required_observations=MINIMUM_OBSERVATIONS,
+            available_observations=observations,
+        )
+    model, result = fit_and_evaluate(demand)
+    future = recursive_forecast(demand, model, result.selected_model, horizon)
+    selected_metrics = (
+        (result.model_mae, result.model_rmse, result.model_wape)
+        if result.selected_model == MODEL_VERSION
+        else (result.baseline_mae, result.baseline_rmse, result.baseline_wape)
+    )
+    return ProductForecast(
+        status="ok",
+        product=response_product,
+        history=[
+            DemandHistoryPoint(date=row.date.date(), quantity=row.quantity)
+            for row in demand.tail(90).itertuples()
+        ],
+        forecast=[
+            ForecastPoint(date=row.date.date(), predicted_quantity=row.predicted_quantity)
+            for row in future.itertuples()
+        ],
+        evaluation=ForecastEvaluation(
+            selected_model=result.selected_model,
+            model_name=MODEL_NAME,
+            model_version=MODEL_VERSION,
+            mae=selected_metrics[0],
+            rmse=selected_metrics[1],
+            wape=selected_metrics[2],
+            baseline_mae=result.baseline_mae,
+            baseline_rmse=result.baseline_rmse,
+            baseline_wape=result.baseline_wape,
+        ),
+        horizon_days=horizon,
+        required_observations=MINIMUM_OBSERVATIONS,
+        available_observations=observations,
+    )
