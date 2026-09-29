@@ -3,7 +3,7 @@ import uuid
 from datetime import date
 
 import pandas as pd
-from sqlalchemy import select
+from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
 from app.models import InventorySnapshot, Product
@@ -72,4 +72,17 @@ def import_inventory_csv(
         snapshots_created=created,
         snapshots_updated=updated,
         errors=errors,
+    )
+
+
+def get_latest_inventory_snapshot(
+    session: Session, company_id: uuid.UUID, product_id: uuid.UUID
+) -> InventorySnapshot | None:
+    return session.scalar(
+        select(InventorySnapshot)
+        .where(
+            InventorySnapshot.company_id == company_id, InventorySnapshot.product_id == product_id
+        )
+        .order_by(desc(InventorySnapshot.snapshot_date))
+        .limit(1)
     )
