@@ -12,6 +12,7 @@ SalesSnap is a modular SaaS application for sales intelligence. It currently pro
 - Tenant-scoped descriptive sales dashboard with KPI cards, date filters, revenue history, and top products.
 - Tenant-scoped Customer Analytics RFM summary and segmentation page, calculated from persisted sales data.
 - Tenant-scoped daily product demand forecasting with evaluated baseline and ML-model selection.
+- Tenant-scoped explainable sales anomaly detection for unusual demand spikes and drops.
 
 ## Architecture
 
@@ -44,6 +45,10 @@ RFM is descriptive analysis of persisted customer sales: recency, sales-record f
 ## Demand forecasting
 
 Authenticated users can open `/forecast` to select a product and a 7-, 14-, or 30-day horizon. Forecasting uses historical daily `SUM(quantity)`, not revenue. See [demand forecasting](./docs/demand-forecasting.md) for the model, metrics, and limitations.
+
+## Sales anomalies
+
+`/anomalies` presents tenant-scoped unusual-demand events detected by past-only robust statistics and Isolation Forest. The system identifies behavior, not its cause. See [anomaly detection](./docs/anomaly-detection.md).
 
 ## Local development
 

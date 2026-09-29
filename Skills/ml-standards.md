@@ -10,3 +10,12 @@ Demand Forecasting V1 predicts daily product demand, defined only as `SUM(sales.
 - Report MAE, RMSE, and WAPE. WAPE is null when actual demand sums to zero.
 - V1 uses `HistGradientBoostingRegressor` with `random_state=42`; forecast recursively and clamp negative values to zero.
 - No LLM, deep learning, AutoML, confidence intervals, model persistence, automated retraining, queues, or model registry in V1.
+
+## Anomaly detection
+
+Stage 8 detects unusual daily product demand, not causes. It reuses tenant-scoped `SUM(quantity)` and continuous demand series, evaluates each day with a past-only rolling median/MAD baseline, and combines that explainable signal with `IsolationForest(contamination="auto", random_state=42)`.
+
+- A detection is confirmed when both signals flag it; a single signal is potential. Severity is deterministic from robust-score magnitude, with Isolation Forest-only results limited to low severity.
+- The baseline and historical features must never include the target day. MAD-zero cases must remain finite and safe.
+- Anomalies are computed on demand and never persisted in V1. There are no alerts or causal claims.
+- Production labels are unavailable: do not claim accuracy, precision, recall, or F1. Use synthetic spikes/drops, leakage tests, and normal-variation sanity checks.
