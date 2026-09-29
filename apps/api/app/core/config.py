@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = 7
     max_upload_size_mb: int = 10
     anomaly_lookback_days: int = 28
+    openai_api_key: str | None = None
+    openai_model: str = "gpt-4.1-mini"
+    ai_insights_enabled: bool = False
+    ai_insights_timeout_seconds: int = 30
+    ai_insights_max_items_per_section: int = 5
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
