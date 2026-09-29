@@ -8,6 +8,7 @@ from app.api.v1.forecasting import router as forecasting_router
 from app.api.v1.health import router as health_router
 from app.api.v1.inventory import router as inventory_router
 from app.api.v1.rfm import router as rfm_router
+from app.api.v1.stock_risk import router as stock_risk_router
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(health_router)
@@ -18,3 +19,4 @@ api_router.include_router(datasets_router)
 api_router.include_router(dashboard_router)
 api_router.include_router(forecasting_router)
 api_router.include_router(rfm_router)
+api_router.include_router(stock_risk_router)

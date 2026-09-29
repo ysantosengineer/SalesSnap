@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models import InventorySnapshot, Product
@@ -91,6 +92,68 @@ def build_stock_risk_result(
     if inventory is None:
         return StockRiskResult(status="missing_inventory", product=forecast.product)
     return risk_result_from_forecast(inventory, forecast)
+
+
+def list_stock_risk_results(
+    session: Session,
+    company_id: uuid.UUID,
+    horizon: int,
+    limit: int | None = None,
+    offset: int = 0,
+) -> tuple[list[StockRiskResult], int]:
+    product_statement = (
+        select(Product).where(Product.company_id == company_id).order_by(Product.name.asc())
+    )
+    total = len(list(session.scalars(product_statement)))
+    if limit is not None:
+        product_statement = product_statement.limit(limit).offset(offset)
+    products = list(session.scalars(product_statement))
+    snapshots = latest_inventory_snapshots(
+        session,
+        company_id,
+        [product.id for product in products],
+    )
+    results: list[StockRiskResult] = []
+    for product in products:
+        forecast = create_product_forecast(session, company_id, product, horizon)
+        if forecast.status == "insufficient_data":
+            results.append(StockRiskResult(status="insufficient_data", product=forecast.product))
+            continue
+        inventory = snapshots.get(product.id)
+        if inventory is None:
+            results.append(StockRiskResult(status="missing_inventory", product=forecast.product))
+            continue
+        results.append(risk_result_from_forecast(inventory, forecast))
+    return results, total
+
+
+def latest_inventory_snapshots(
+    session: Session, company_id: uuid.UUID, product_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, InventorySnapshot]:
+    if not product_ids:
+        return {}
+    latest_dates = (
+        select(
+            InventorySnapshot.product_id,
+            func.max(InventorySnapshot.snapshot_date).label("snapshot_date"),
+        )
+        .where(
+            InventorySnapshot.company_id == company_id,
+            InventorySnapshot.product_id.in_(product_ids),
+        )
+        .group_by(InventorySnapshot.product_id)
+        .subquery()
+    )
+    snapshots = session.scalars(
+        select(InventorySnapshot)
+        .join(
+            latest_dates,
+            (InventorySnapshot.product_id == latest_dates.c.product_id)
+            & (InventorySnapshot.snapshot_date == latest_dates.c.snapshot_date),
+        )
+        .where(InventorySnapshot.company_id == company_id)
+    )
+    return {snapshot.product_id: snapshot for snapshot in snapshots}
 
 
 def risk_result_from_forecast(
