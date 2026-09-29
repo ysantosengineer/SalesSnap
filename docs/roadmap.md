@@ -8,7 +8,7 @@
 6. RFM Segmentation — Completed
 7. Demand Forecasting — Completed
 8. Anomaly Detection — Completed
-9. Stock-out Risk
+9. Stock-out Risk — Completed
 10. AI Insights
 11. AI Chat
 12. Production Readiness
