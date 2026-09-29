@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
     max_upload_size_mb: int = 10
+    anomaly_lookback_days: int = 28
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
