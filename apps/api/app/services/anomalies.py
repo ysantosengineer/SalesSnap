@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import IsolationForest
 
+from app.schemas.anomalies import AnomalyProduct, DemandAnomaly
 from app.services.forecasting import (
     RANDOM_STATE,
     build_continuous_demand_series,
@@ -90,3 +91,33 @@ def detect_anomaly_rows(series: pd.DataFrame, lookback: int = 28) -> pd.DataFram
         frame["statistical_flag"] & frame["isolation_forest_flag"], "confirmed", "potential"
     )
     return frame[(frame["severity"].notna()) & (frame["direction"].notna())].copy()
+
+
+def product_anomalies(
+    session, company_id: uuid.UUID, product, lookback: int
+) -> tuple[list[DemandAnomaly], int]:
+    series = get_product_anomaly_series(session, company_id, product.id)
+    if len(series) < MINIMUM_ANOMALY_OBSERVATIONS:
+        return [], len(series)
+    rows = detect_anomaly_rows(series, lookback)
+    items = [
+        DemandAnomaly(
+            date=row.date.date(),
+            product=AnomalyProduct(
+                id=product.id, external_id=product.external_id, name=product.name
+            ),
+            actual_demand=row.quantity,
+            expected_demand=row.expected_demand,
+            deviation_percentage=None
+            if pd.isna(row.deviation_percentage)
+            else row.deviation_percentage,
+            direction=row.direction,
+            severity=row.severity,
+            robust_score=row.robust_score,
+            statistical_flag=bool(row.statistical_flag),
+            isolation_forest_flag=bool(row.isolation_forest_flag),
+            confidence=row.confidence,
+        )
+        for row in rows.itertuples()
+    ]
+    return items, len(series)
