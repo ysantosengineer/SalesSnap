@@ -1,6 +1,6 @@
 # SalesSnap
 
-SalesSnap is a modular SaaS application for sales intelligence. It currently provides tenant-aware authentication, validated sales CSV ingestion, descriptive sales analytics, and customer RFM segmentation. Forecasting, machine learning, and generative AI are planned for later stages.
+SalesSnap is a modular SaaS application for sales intelligence. It provides tenant-aware authentication, validated sales CSV ingestion, descriptive analytics, forecasting, anomaly detection, and stock-out risk. Generative AI is planned for a later stage.
 
 ## Current capabilities
 
@@ -13,6 +13,7 @@ SalesSnap is a modular SaaS application for sales intelligence. It currently pro
 - Tenant-scoped Customer Analytics RFM summary and segmentation page, calculated from persisted sales data.
 - Tenant-scoped daily product demand forecasting with evaluated baseline and ML-model selection.
 - Tenant-scoped explainable sales anomaly detection for unusual demand spikes and drops.
+- Inventory snapshot CSV import and tenant-scoped stock-out risk projections.
 
 ## Architecture
 
@@ -49,6 +50,10 @@ Authenticated users can open `/forecast` to select a product and a 7-, 14-, or 3
 ## Sales anomalies
 
 `/anomalies` presents tenant-scoped unusual-demand events detected by past-only robust statistics and Isolation Forest. The system identifies behavior, not its cause. See [anomaly detection](./docs/anomaly-detection.md).
+
+## Inventory analytics and stock-out risk
+
+Authenticated users can import point-in-time inventory at `/inventory` and evaluate projected risk at `/stock-risk`. Stock-out risk uses the latest inventory snapshot and the existing Stage 7 forecast; it is decision support, not automatic replenishment. See [inventory snapshots](./docs/inventory-snapshots.md) and [stock-out risk](./docs/stock-out-risk.md).
 
 ## Local development
 
@@ -88,6 +93,6 @@ Read every Markdown file in [Skills](./Skills) before changing the project. Thes
 
 ## Roadmap
 
-Completed: Project Foundation, Database & Multi-tenancy, Authentication & Tenant Context, CSV Import & Data Ingestion, Sales Dashboard, RFM Segmentation, and Demand Forecasting.
+Completed: Project Foundation, Database & Multi-tenancy, Authentication & Tenant Context, CSV Import & Data Ingestion, Sales Dashboard, RFM Segmentation, Demand Forecasting, Anomaly Detection, and Stock-out Risk.
 
 See [docs/roadmap.md](./docs/roadmap.md) for the planned stages.
