@@ -26,12 +26,18 @@ class DemandAnomaly(BaseModel):
     confidence: Literal["confirmed", "potential"]
 
 
+class DemandTimelinePoint(BaseModel):
+    date: date
+    quantity: Decimal
+
+
 class AnomalyPage(BaseModel):
     status: Literal["ok", "insufficient_data"]
     items: list[DemandAnomaly] = []
     total: int = 0
     required_observations: int = 30
     available_observations: int = 0
+    history: list[DemandTimelinePoint] = []
 
 
 class AnomalySummary(BaseModel):
