@@ -14,6 +14,8 @@ Customer Analytics and RFM decisions are permanent project rules and are documen
 
 Machine-learning and demand-forecasting decisions are permanent project rules in `ml-standards.md`; read it before changing forecasting, analytical models, features, or metrics.
 
+Inventory snapshot and stock-out-risk decisions are permanent project rules in `inventory-analytics-standards.md`; read it before changing inventory imports, projected inventory, or stock risk.
+
 Before starting any development stage:
 
 1. Read every Markdown file inside /Skills.
