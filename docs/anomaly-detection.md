@@ -9,3 +9,5 @@ Both signals create a **confirmed** anomaly; one creates a **potential** anomaly
 Production anomaly labels are unavailable. Therefore accuracy, precision, recall, and F1 are not reported as real-world quality metrics. V1 validation uses unit tests, synthetic spikes/drops, leakage tests, and stable-series sanity checks.
 
 There is no causal analysis, promotion/holiday calendar, alerting, persisted anomaly history, feedback loop, labeled production dataset, or LLM explanation in V1.
+
+The anomaly dashboard supports inclusive `start_date`/`end_date`, product, severity, and direction filters. Summary, list, and selected-product timeline use the same requested period. Timeline markers are returned anomaly payloads; the frontend never recalculates detection.
