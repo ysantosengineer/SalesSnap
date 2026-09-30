@@ -2,6 +2,7 @@
 
 import json
 import uuid
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import select
@@ -56,6 +57,7 @@ def get_conversation(
 def send_message(session: Session, conversation: ChatConversation, content: str) -> AIChatResponse:
     user_message = ChatMessage(conversation_id=conversation.id, role="user", content=content)
     session.add(user_message)
+    conversation.updated_at = datetime.now(UTC)
     session.commit()
     settings = get_settings()
     history = list(

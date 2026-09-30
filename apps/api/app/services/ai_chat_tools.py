@@ -5,7 +5,7 @@ from collections import Counter
 from datetime import date
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
@@ -22,6 +22,7 @@ from app.services.stock_risk import build_stock_risk_result, list_stock_risk_res
 
 
 class DateRangeArgs(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     start_date: date | None = None
     end_date: date | None = None
 
