@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
@@ -21,4 +21,4 @@ def generate_ai_insights(
     for insight in response.insights:
         if insight.related_product_id and str(insight.related_product_id) not in allowed_products:
             raise ValueError("AI response references an unknown product")
-    return response.model_copy(update={"generated_at": datetime.now(timezone.utc)})
+    return response.model_copy(update={"generated_at": datetime.now(UTC)})
