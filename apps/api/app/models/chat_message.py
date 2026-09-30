@@ -15,7 +15,9 @@ class ChatMessage(UUIDTimestampMixin, Base):
     """A persisted user or assistant message in a chat conversation."""
 
     __tablename__ = "chat_messages"
-    __table_args__ = (CheckConstraint("role IN ('user', 'assistant')", name="ck_chat_messages_role"),)
+    __table_args__ = (
+        CheckConstraint("role IN ('user', 'assistant')", name="ck_chat_messages_role"),
+    )
 
     conversation_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("chat_conversations.id"), nullable=False, index=True
