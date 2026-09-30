@@ -4,6 +4,7 @@ from datetime import date
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.services.anomalies import product_anomalies
 from app.services.dashboard import get_summary, get_top_products
 from app.services.forecasting import (
     create_product_forecast,
@@ -26,6 +27,7 @@ def build_ai_insight_context(
     rfm, _ = analyze_rfm(session, company_id, start_date, end_date)
     risks, _ = list_stock_risk_results(session, company_id, 30, limit=limit)
     forecasts = []
+    anomalies = []
     for item in list_forecast_products(session, company_id)[:limit]:
         product = get_forecast_product(session, company_id, item.id)
         if product is None:
@@ -45,6 +47,10 @@ def build_ai_insight_context(
                     else None,
                 }
             )
+        detected, _ = product_anomalies(
+            session, company_id, product, get_settings().anomaly_lookback_days
+        )
+        anomalies.extend(detected)
     segments: dict[str, dict[str, object]] = {}
     for customer in rfm:
         entry = segments.setdefault(customer.segment, {"customers": 0, "revenue": 0})
@@ -88,5 +94,16 @@ def build_ai_insight_context(
         },
         "stock_risk": stock_risk,
         "forecast": forecasts,
-        "anomalies": [],
+        "anomalies": [
+            {
+                "product_id": str(item.product.id),
+                "external_id": item.product.external_id,
+                "name": item.product.name,
+                "severity": item.severity,
+                "direction": item.direction,
+                "actual_demand": str(item.actual_demand),
+                "expected_demand": str(item.expected_demand),
+            }
+            for item in sorted(anomalies, key=lambda item: item.date, reverse=True)[:limit]
+        ],
     }
