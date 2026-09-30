@@ -16,6 +16,8 @@ Machine-learning and demand-forecasting decisions are permanent project rules in
 
 Inventory snapshot and stock-out-risk decisions are permanent project rules in `inventory-analytics-standards.md`; read it before changing inventory imports, projected inventory, or stock risk.
 
+Generative-AI decisions are permanent project rules in `ai-standards.md`; read it before changing AI context, providers, prompts, or insights.
+
 Before starting any development stage:
 
 1. Read every Markdown file inside /Skills.
