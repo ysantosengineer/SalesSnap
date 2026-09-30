@@ -1,0 +1,15 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/auth-provider";
+import { AIInsightsResponse, generateAIInsights } from "@/lib/ai-insights-api";
+
+export default function InsightsPage() {
+  const { accessToken, isLoading, user } = useAuth(); const router = useRouter(); const [startDate, setStartDate] = useState(""); const [endDate, setEndDate] = useState(""); const [result, setResult] = useState<AIInsightsResponse | null>(null); const [loading, setLoading] = useState(false); const [error, setError] = useState<string | null>(null);
+  useEffect(() => { if (!isLoading && !user) router.replace("/login"); }, [isLoading, router, user]);
+  async function generate() { if (!accessToken || loading) return; setLoading(true); setError(null); try { setResult(await generateAIInsights(accessToken, startDate, endDate)); } catch (cause) { setError(cause instanceof Error ? cause.message : "AI insights are temporarily unavailable."); } finally { setLoading(false); } }
+  if (isLoading || !user) return <main className="p-8">Loading...</main>;
+  return <main className="min-h-screen bg-slate-950 p-6 text-white"><section className="mx-auto max-w-4xl space-y-6"><header><p className="text-cyan-300">{user.company.name}</p><h1 className="text-3xl font-bold">AI Insights</h1><p className="text-slate-400">AI insights interpret analytics already calculated by SalesSnap. Review important decisions before acting.</p></header><div className="flex flex-wrap gap-3"><input className="rounded bg-slate-800 p-2" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}/><input className="rounded bg-slate-800 p-2" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)}/><button className="rounded bg-cyan-500 px-4 text-slate-950 disabled:opacity-60" disabled={loading} onClick={generate}>{loading ? "Analyzing your sales data..." : result ? "Regenerate Insights" : "Generate Insights"}</button></div>{!result && !loading && !error && <p>Generate AI insights from your current SalesSnap analytics.</p>}{error && <div className="rounded border border-rose-500 p-4"><p>{error}</p>{error.includes("not configured") && <p className="mt-2 text-slate-400">AI Insights are not configured for this environment.</p>}<button className="mt-3 underline" onClick={generate}>Try Again</button></div>}{result?.insights.length === 0 && <p>Not enough analytics data to generate insights yet. <Link className="text-cyan-300" href="/import">Import sales data first.</Link></p>}{result?.insights.map((item) => <article className="rounded border border-slate-700 p-5" key={item.id}><p className="capitalize text-cyan-300">{item.priority} · {item.category}</p><h2 className="mt-1 text-xl font-semibold">{item.title}</h2><p className="mt-2">{item.summary}</p><h3 className="mt-4 font-semibold">Evidence</h3><ul className="list-disc pl-5">{item.evidence.map((evidence) => <li key={evidence}>{evidence}</li>)}</ul><h3 className="mt-4 font-semibold">Suggested action</h3><p>{item.recommended_action}</p></article>)}</section></main>;
+}
