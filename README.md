@@ -14,6 +14,7 @@ SalesSnap is a modular SaaS application for sales intelligence. It provides tena
 - Tenant-scoped daily product demand forecasting with evaluated baseline and ML-model selection.
 - Tenant-scoped explainable sales anomaly detection for unusual demand spikes and drops.
 - Inventory snapshot CSV import and tenant-scoped stock-out risk projections.
+- On-demand, evidence-backed AI interpretation of existing analytics.
 
 ## Architecture
 
@@ -54,6 +55,10 @@ Authenticated users can open `/forecast` to select a product and a 7-, 14-, or 3
 ## Inventory analytics and stock-out risk
 
 Authenticated users can import point-in-time inventory at `/inventory` and evaluate projected risk at `/stock-risk`. Stock-out risk uses the latest inventory snapshot and the existing Stage 7 forecast; it is decision support, not automatic replenishment. See [inventory snapshots](./docs/inventory-snapshots.md) and [stock-out risk](./docs/stock-out-risk.md).
+
+## AI Insights
+
+`/insights` generates evidence-backed interpretations from deterministic SalesSnap analytics. It does not provide AI Chat, database access, autonomous actions, forecasts, or recommendations with operational quantities. See [AI Insights](./docs/ai-insights.md).
 
 ## Local development
 
