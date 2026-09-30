@@ -35,9 +35,7 @@ def calculate_stock_risk(
     for index, point in enumerate(forecast, start=1):
         cumulative_demand += Decimal(str(point.predicted_quantity))
         projected_stock = stock - cumulative_demand
-        projection.append(
-            ProjectedInventoryPoint(date=point.date, projected_stock=projected_stock)
-        )
+        projection.append(ProjectedInventoryPoint(date=point.date, projected_stock=projected_stock))
         if expected_stockout_date is None and projected_stock <= 0:
             expected_stockout_date = point.date
             days_of_cover = index

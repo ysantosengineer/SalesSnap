@@ -2,8 +2,8 @@ from fastapi import APIRouter
 
 from app.api.v1.ai_insights import router as ai_insights_router
 from app.api.v1.anomalies import router as anomalies_router
-from app.api.v1.chat import router as chat_router
 from app.api.v1.auth import router as auth_router
+from app.api.v1.chat import router as chat_router
 from app.api.v1.dashboard import router as dashboard_router
 from app.api.v1.datasets import router as datasets_router
 from app.api.v1.forecasting import router as forecasting_router
