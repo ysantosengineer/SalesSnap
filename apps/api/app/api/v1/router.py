@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.v1.anomalies import router as anomalies_router
+from app.api.v1.ai_insights import router as ai_insights_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.dashboard import router as dashboard_router
 from app.api.v1.datasets import router as datasets_router
@@ -15,6 +16,7 @@ api_router.include_router(health_router)
 api_router.include_router(inventory_router)
 api_router.include_router(auth_router)
 api_router.include_router(anomalies_router)
+api_router.include_router(ai_insights_router)
 api_router.include_router(datasets_router)
 api_router.include_router(dashboard_router)
 api_router.include_router(forecasting_router)
