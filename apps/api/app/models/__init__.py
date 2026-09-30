@@ -1,5 +1,7 @@
 """SQLAlchemy domain models."""
 
+from app.models.chat_conversation import ChatConversation
+from app.models.chat_message import ChatMessage
 from app.models.company import Company
 from app.models.customer import Customer
 from app.models.dataset import Dataset
@@ -19,3 +21,5 @@ __all__ = [
     "Sale",
     "User",
 ]
+    "ChatConversation",
+    "ChatMessage",
