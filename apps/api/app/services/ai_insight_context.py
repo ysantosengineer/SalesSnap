@@ -5,6 +5,11 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.services.dashboard import get_summary, get_top_products
+from app.services.forecasting import (
+    create_product_forecast,
+    get_forecast_product,
+    list_forecast_products,
+)
 from app.services.rfm import analyze_rfm
 from app.services.stock_risk import list_stock_risk_results
 
@@ -20,6 +25,26 @@ def build_ai_insight_context(
     dashboard = get_summary(session, company_id, start_date, end_date)
     rfm, _ = analyze_rfm(session, company_id, start_date, end_date)
     risks, _ = list_stock_risk_results(session, company_id, 30, limit=limit)
+    forecasts = []
+    for item in list_forecast_products(session, company_id)[:limit]:
+        product = get_forecast_product(session, company_id, item.id)
+        if product is None:
+            continue
+        forecast = create_product_forecast(session, company_id, product, 30)
+        if forecast.status == "ok":
+            forecasts.append(
+                {
+                    "product_id": str(item.id),
+                    "external_id": item.external_id,
+                    "name": item.name,
+                    "forecast_total": str(
+                        sum(point.predicted_quantity for point in forecast.forecast)
+                    ),
+                    "selected_model": forecast.evaluation.selected_model
+                    if forecast.evaluation
+                    else None,
+                }
+            )
     segments: dict[str, dict[str, object]] = {}
     for customer in rfm:
         entry = segments.setdefault(customer.segment, {"customers": 0, "revenue": 0})
@@ -62,4 +87,6 @@ def build_ai_insight_context(
             },
         },
         "stock_risk": stock_risk,
+        "forecast": forecasts,
+        "anomalies": [],
     }
