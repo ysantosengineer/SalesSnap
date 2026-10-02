@@ -18,6 +18,8 @@ Inventory snapshot and stock-out-risk decisions are permanent project rules in `
 
 Generative-AI decisions are permanent project rules in `ai-standards.md`; read it before changing AI context, providers, prompts, or insights.
 
+Production configuration, deployment, observability, dependency, and release decisions are permanent project rules in `production-standards.md`; read it before changing runtime hardening, containers, health checks, CI gates, or operational procedures.
+
 Before starting any development stage:
 
 1. Read every Markdown file inside /Skills.
