@@ -1,9 +1,11 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.api.v1.auth import get_current_user
+from app.core.config import get_settings
+from app.core.rate_limit import enforce_rate_limit
 from app.db.session import get_db_session
 from app.models import User
 from app.schemas.forecasting import ForecastProduct, ProductForecast
@@ -27,10 +29,17 @@ def products(
 @router.get("/products/{product_id}", response_model=ProductForecast)
 def forecast_product(
     product_id: uuid.UUID,
+    request: Request,
     horizon: int = Query(default=30),
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> ProductForecast:
+    enforce_rate_limit(
+        request,
+        "forecast",
+        str(current_user.id),
+        get_settings().rate_limit_forecast_per_minute,
+    )
     if horizon not in SUPPORTED_HORIZONS:
         raise HTTPException(status_code=422, detail="horizon must be one of 7, 14, or 30")
     product = get_forecast_product(session, current_user.company_id, product_id)

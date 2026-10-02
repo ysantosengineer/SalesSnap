@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.api.v1.auth import get_current_user
 from app.core.config import get_settings
+from app.core.rate_limit import enforce_rate_limit
 from app.db.session import get_db_session
 from app.models import User
 from app.schemas.dataset_import import DatasetImportResponse, DatasetSummaryResponse
@@ -28,6 +29,12 @@ async def import_csv(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_db_session),
 ) -> DatasetImportResponse:
+    enforce_rate_limit(
+        request,
+        "import",
+        str(current_user.id),
+        get_settings().rate_limit_import_per_minute,
+    )
     dataset_name = validate_csv_file(file)
     max_upload_bytes = get_settings().max_upload_size_mb * 1024 * 1024
     reject_oversized_content_length(request, max_upload_bytes)
