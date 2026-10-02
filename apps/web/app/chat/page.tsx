@@ -75,8 +75,31 @@ export default function ChatPage() {
   }, [accessToken, loadConversation]);
 
   useEffect(() => {
-    void loadConversations();
-  }, [loadConversations]);
+    if (!accessToken) return;
+    const token = accessToken;
+    let cancelled = false;
+
+    async function loadInitialConversations() {
+      try {
+        const items = await listConversations(token);
+        if (cancelled) return;
+        setConversations(items);
+        if (items.length > 0) {
+          const conversation = await getConversation(token, items[0].id);
+          if (!cancelled) setActive(conversation);
+        }
+      } catch (cause) {
+        if (!cancelled) setError(errorMessage(cause, "Unable to load conversations."));
+      } finally {
+        if (!cancelled) setListLoading(false);
+      }
+    }
+
+    void loadInitialConversations();
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken]);
 
   async function newChat() {
     if (!accessToken || creating) return;
