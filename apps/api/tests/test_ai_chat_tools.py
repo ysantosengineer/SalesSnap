@@ -6,7 +6,11 @@ from unittest.mock import Mock
 
 import pytest
 from pydantic import ValidationError
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 
+from app.db.session import Base
+from app.models import Company, Product
 from app.services.ai_chat_tools import TOOL_ARGUMENTS, execute_tool, tool_definitions
 
 
@@ -187,3 +191,30 @@ def test_foreign_product_never_reaches_analytics(monkeypatch, tool) -> None:
         monkeypatch.setattr(f"app.services.ai_chat_tools.{service}", handler)
     execute_tool(None, uuid.uuid4(), tool, {"product_id": str(uuid.uuid4())})
     handler.assert_not_called()
+
+
+def test_product_lookup_and_analytics_isolate_same_external_id():
+    engine = create_engine("sqlite://")
+    Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        a, b = Company(name="A"), Company(name="B")
+        p1 = Product(company=a, external_id="P001", name="A mouse")
+        p2 = Product(company=b, external_id="P001", name="B mouse")
+        session.add_all([p1, p2])
+        session.commit()
+        for query in ["P001", "mouse"]:
+            result = execute_tool(session, a.id, "find_product", {"query": query})
+            assert [item["id"] for item in result["products"]] == [p1.id]
+        result = execute_tool(session, a.id, "get_product_forecast", {"product_id": str(p2.id)})
+        assert result == {"status": "not_found"}
+        assert (
+            execute_tool(session, a.id, "get_stock_risk", {"product_id": str(p2.id)})["results"]
+            == []
+        )
+        assert (
+            execute_tool(session, a.id, "get_sales_anomalies", {"product_id": str(p2.id)})[
+                "anomalies"
+            ]
+            == []
+        )
+    engine.dispose()
