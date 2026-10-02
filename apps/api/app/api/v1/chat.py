@@ -1,9 +1,11 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.v1.auth import get_current_user
+from app.core.config import get_settings
+from app.core.rate_limit import enforce_rate_limit
 from app.db.session import get_db_session
 from app.integrations.openai_client import AIProviderDisabledError, AIProviderUnavailableError
 from app.models import User
@@ -71,9 +73,16 @@ def get_chat_conversation(
 def post_chat_message(
     conversation_id: uuid.UUID,
     payload: MessageCreate,
+    request: Request,
     session: Session = Depends(get_db_session),
     user: User = Depends(get_current_user),
 ) -> AIChatResponse:
+    enforce_rate_limit(
+        request,
+        "ai_chat",
+        str(user.id),
+        get_settings().rate_limit_ai_chat_per_minute,
+    )
     conversation = _conversation_or_404(session, user, conversation_id)
     try:
         return send_message(session, conversation, payload.message)

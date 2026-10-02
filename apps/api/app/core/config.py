@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = Field(default=7, ge=1, le=90)
     max_upload_size_mb: int = Field(default=10, ge=1, le=100)
     anomaly_lookback_days: int = 28
+    rate_limit_auth_per_minute: int = Field(default=20, ge=1, le=1000)
+    rate_limit_import_per_minute: int = Field(default=10, ge=1, le=1000)
+    rate_limit_ai_insights_per_minute: int = Field(default=5, ge=1, le=1000)
+    rate_limit_ai_chat_per_minute: int = Field(default=10, ge=1, le=1000)
+    rate_limit_forecast_per_minute: int = Field(default=30, ge=1, le=1000)
     openai_api_key: str | None = None
     openai_model: str = "gpt-4.1-mini"
     ai_insights_enabled: bool = False

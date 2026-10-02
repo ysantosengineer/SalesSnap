@@ -1,10 +1,12 @@
 import uuid
 
 import jwt
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
+from app.core.rate_limit import client_ip, enforce_rate_limit
 from app.core.security import cookie_secure, decode_token
 from app.db.session import get_db_session
 from app.models import User
@@ -73,8 +75,14 @@ def get_current_company_id(current_user: User = Depends(get_current_user)) -> uu
 
 @router.post("/register", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
 def register(
-    payload: RegisterRequest, response: Response, session: Session = Depends(get_db_session)
+    payload: RegisterRequest,
+    request: Request,
+    response: Response,
+    session: Session = Depends(get_db_session),
 ) -> SessionResponse:
+    enforce_rate_limit(
+        request, "auth", client_ip(request), get_settings().rate_limit_auth_per_minute
+    )
     try:
         user = register_user(session, payload.company_name, str(payload.email), payload.password)
     except ValueError:
@@ -88,8 +96,14 @@ def register(
 
 @router.post("/login", response_model=SessionResponse)
 def login(
-    payload: LoginRequest, response: Response, session: Session = Depends(get_db_session)
+    payload: LoginRequest,
+    request: Request,
+    response: Response,
+    session: Session = Depends(get_db_session),
 ) -> SessionResponse:
+    enforce_rate_limit(
+        request, "auth", client_ip(request), get_settings().rate_limit_auth_per_minute
+    )
     user = authenticate_user(session, str(payload.email), payload.password)
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
