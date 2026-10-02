@@ -18,11 +18,17 @@ class ChatConversation(UUIDTimestampMixin, Base):
 
     __tablename__ = "chat_conversations"
 
-    company_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("companies.id"), nullable=False)
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("users.id"), nullable=False)
+    company_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("companies.id"), nullable=False, index=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("users.id"), nullable=False, index=True
+    )
     title: Mapped[str] = mapped_column(String(255), nullable=False, default="New conversation")
     company: Mapped["Company"] = relationship()
     user: Mapped["User"] = relationship()
     messages: Mapped[list["ChatMessage"]] = relationship(
-        back_populates="conversation", cascade="all, delete-orphan"
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+        order_by="(ChatMessage.created_at, ChatMessage.id)",
     )

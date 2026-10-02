@@ -1,5 +1,6 @@
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Any
 
 from app.core.config import Settings
@@ -26,6 +27,15 @@ class ChatToolCall:
 class ChatProviderResponse:
     text: str
     tool_calls: list[ChatToolCall]
+    output_items: list[dict[str, Any]] = field(default_factory=list)
+
+
+@lru_cache(maxsize=1)
+def _client(api_key: str, timeout: int):
+    """One client factory shared by Insights and Chat; credentials never enter prompts."""
+    from openai import OpenAI
+
+    return OpenAI(api_key=api_key, timeout=timeout)
 
 
 def generate_structured_insights(
@@ -34,11 +44,7 @@ def generate_structured_insights(
     if not settings.ai_insights_enabled or not settings.openai_api_key:
         raise AIProviderDisabledError
     try:
-        from openai import OpenAI
-
-        client = OpenAI(
-            api_key=settings.openai_api_key, timeout=settings.ai_insights_timeout_seconds
-        )
+        client = _client(settings.openai_api_key, settings.ai_insights_timeout_seconds)
         response = client.responses.parse(
             model=settings.openai_model,
             input=[
@@ -63,18 +69,17 @@ def generate_chat_response(
     if not settings.ai_insights_enabled or not settings.openai_api_key:
         raise AIProviderDisabledError
     try:
-        from openai import OpenAI
-
-        client = OpenAI(
-            api_key=settings.openai_api_key, timeout=settings.ai_insights_timeout_seconds
-        )
+        client = _client(settings.openai_api_key, settings.ai_insights_timeout_seconds)
         response = client.responses.create(
             model=settings.openai_model,
             input=input_items,
             tools=tools,
             max_output_tokens=settings.ai_chat_max_output_tokens,
             store=False,
+            include=["reasoning.encrypted_content"],
         )
+        if response.status != "completed":
+            raise AIProviderUnavailableError
         calls = []
         for item in response.output:
             if item.type == "function_call":
@@ -85,7 +90,13 @@ def generate_chat_response(
                         arguments=json.loads(item.arguments),
                     )
                 )
-        return ChatProviderResponse(text=response.output_text or "", tool_calls=calls)
+        return ChatProviderResponse(
+            text=response.output_text or "",
+            tool_calls=calls,
+            output_items=[
+                item.model_dump(mode="json", exclude_none=True) for item in response.output
+            ],
+        )
     except AIProviderDisabledError:
         raise
     except Exception as error:
