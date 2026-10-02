@@ -1,108 +1,174 @@
 # SalesSnap
 
-SalesSnap is a modular SaaS application for sales intelligence. It provides tenant-aware authentication, validated sales CSV ingestion, descriptive analytics, forecasting, anomaly detection, stock-out risk, AI insights, and a controlled analytics chat.
+[![Validation](https://github.com/ysantosengineer/SalesSnap/actions/workflows/validation.yml/badge.svg)](https://github.com/ysantosengineer/SalesSnap/actions/workflows/validation.yml)
 
-## Current capabilities
+SalesSnap is a production-oriented, multi-tenant sales-intelligence SaaS portfolio project. It turns validated sales and inventory data into descriptive analytics, customer segmentation, demand forecasts, anomaly signals, stock-out risk, evidence-backed AI insights, and a controlled analytics chat.
 
-- Next.js frontend with login, registration, protected dashboard, and CSV import page.
-- FastAPI REST API under `/api/v1`.
-- Company-scoped authentication with JWT access tokens and rotating HttpOnly refresh tokens.
-- PostgreSQL, SQLAlchemy, and Alembic migrations.
-- Sales CSV V1 ingestion with Pandas, Decimal money handling, partial row rejection, and import summaries.
-- Tenant-scoped descriptive sales dashboard with KPI cards, date filters, revenue history, and top products.
-- Tenant-scoped Customer Analytics RFM summary and segmentation page, calculated from persisted sales data.
-- Tenant-scoped daily product demand forecasting with evaluated baseline and ML-model selection.
-- Tenant-scoped explainable sales anomaly detection for unusual demand spikes and drops.
-- Inventory snapshot CSV import and tenant-scoped stock-out risk projections.
-- On-demand, evidence-backed AI interpretation of existing analytics.
-- User-private AI Analytics Chat with controlled tool calling and persisted evidence-backed answers.
+The repository demonstrates full-stack product engineering: typed API design, tenant isolation, transactional ingestion, statistical and machine-learning pipelines, safe LLM orchestration, PostgreSQL migrations, observability, security hardening, containers, and automated quality gates.
+
+## Product problem
+
+Commercial teams often keep sales and inventory data in disconnected spreadsheets. Reporting is manual, predictions are difficult to validate, and generic AI assistants lack trustworthy business context. SalesSnap provides one governed flow from imported data to explainable decision support while keeping company data isolated.
+
+## Capabilities
+
+- Company-scoped registration, login, short-lived JWT access tokens, and rotating HttpOnly refresh tokens.
+- Bounded UTF-8 sales CSV ingestion with row validation, partial rejection, and Dataset lifecycle tracking.
+- Revenue, units, sales records, active customers, average sale value, time series, and top-product analytics.
+- Deterministic RFM customer scoring and segmentation.
+- Daily product-demand forecasting with chronological evaluation against a naive baseline.
+- Explainable demand-anomaly detection using past-only robust statistics and Isolation Forest.
+- Inventory snapshot import and projected stock-out risk based on the selected demand forecast.
+- Evidence-backed AI Insights generated only from structured tenant-aware analytics.
+- User-private AI Chat with strict, read-only analytical tools and persisted evidence.
+- Structured logs, request correlation, readiness checks, rate limiting, hardened headers, production containers, and CI validation.
 
 ## Architecture
 
+```mermaid
+flowchart LR
+    U[Browser] --> W[Next.js / React]
+    W -->|REST /api/v1| A[FastAPI modular monolith]
+    A -->|SQLAlchemy| P[(PostgreSQL)]
+    A --> D[Pandas transformations]
+    A --> M[Scikit-learn analytics]
+    A -->|structured bounded context| O[OpenAI API]
+```
+
+Next.js owns presentation and interaction. FastAPI owns authorization, business rules, orchestration, and analytical APIs. PostgreSQL is the source of truth and performs tenant-scoped filtering and aggregation. Pandas handles bounded transformations, scikit-learn implements forecasting and anomaly models, and OpenAI interprets facts without direct database access.
+
+SalesSnap is intentionally a modular monolith. It does not introduce microservices, queues, Redis, Kafka, Celery, or Kubernetes without a demonstrated requirement.
+
+## Data and AI flow
+
 ```text
-Browser → Next.js → FastAPI → PostgreSQL
-                         └── Pandas CSV processing
+Authenticated user
+  → server-derived company context
+  → validated sales/inventory ingestion
+  → PostgreSQL tenant-scoped records and aggregates
+  → deterministic analytics and bounded ML results
+  → optional structured AI interpretation
+  → evidence-backed UI response
 ```
 
-SalesSnap is a modular monolith. Every persisted business record belongs to a company; the API derives the tenant from the authenticated user and never accepts a client-provided `company_id` as its authority.
+The LLM never calculates KPIs, executes SQL, chooses a tenant, writes business data, browses the web, or registers tools. AI Chat can call only the application-owned analytics registry; the server validates arguments, injects tenant authority, bounds history/tool calls/output, and derives evidence from actual tool results.
 
-## CSV import
+## Technology
 
-Authenticated users can upload a CSV at `POST /api/v1/datasets/import` or through `/import` in the frontend.
+| Area | Stack |
+| --- | --- |
+| Frontend | Next.js 16, React, TypeScript, App Router, Tailwind CSS |
+| Backend | Python 3.12+, FastAPI, Pydantic |
+| Persistence | PostgreSQL 17, SQLAlchemy, Alembic |
+| Data and ML | Pandas, scikit-learn |
+| Generative AI | OpenAI Responses API integration |
+| Quality | pytest, Ruff, ESLint, npm audit, pip-audit |
+| Infrastructure | Docker, Docker Compose, GitHub Actions |
 
-```csv
-date,customer_id,product_id,product_name,quantity,unit_price
-2026-09-01,C001,P001,Mouse Logitech,2,149.90
-```
+## Security and tenancy
 
-The maximum default file size is 10 MB (`MAX_UPLOAD_SIZE_MB`). Clearly oversized multipart requests are rejected from `Content-Length` before FastAPI parses the form body. Remaining uploads are read in 64 KiB chunks and stop as soon as the actual file exceeds the configured limit; the application does not call an unbounded `read()` for an upload.
+- Every protected request derives `company_id` from the authenticated user; client-selected tenant authority is rejected.
+- Passwords use Argon2 hashing. Raw refresh tokens, passwords, and provider keys are never persisted or logged.
+- Production starts fail fast for placeholder secrets, debug mode, unsafe CORS, a default database URL, or enabled AI without a key.
+- Authentication is rate-limited by client IP; expensive authenticated operations are limited by user.
+- CSP, clickjacking, MIME-sniffing, permissions, and referrer headers protect the frontend.
+- Errors exposed to clients are sanitized; request logs are structured and correlated with `X-Request-ID`.
 
-See [CSV format documentation](./docs/sales-csv-format.md) and [data ingestion architecture](./docs/data-ingestion.md) for validation rules, lifecycle, and limitations.
+## Run locally
 
-## Customer Analytics
-
-Authenticated users can view customer segments at `/customers/segments`. The API provides company-scoped RFM results at `GET /api/v1/analytics/rfm/summary` and `GET /api/v1/analytics/rfm/customers`.
-
-RFM is descriptive analysis of persisted customer sales: recency, sales-record frequency, and revenue. It does not perform demand forecasting, anomaly detection, recommendations, or AI analysis. See [RFM segmentation](./docs/rfm-segmentation.md) for scoring rules and API behavior.
-
-## Demand forecasting
-
-Authenticated users can open `/forecast` to select a product and a 7-, 14-, or 30-day horizon. Forecasting uses historical daily `SUM(quantity)`, not revenue. See [demand forecasting](./docs/demand-forecasting.md) for the model, metrics, and limitations.
-
-## Sales anomalies
-
-`/anomalies` presents tenant-scoped unusual-demand events detected by past-only robust statistics and Isolation Forest. The system identifies behavior, not its cause. See [anomaly detection](./docs/anomaly-detection.md).
-
-## Inventory analytics and stock-out risk
-
-Authenticated users can import point-in-time inventory at `/inventory` and evaluate projected risk at `/stock-risk`. Stock-out risk uses the latest inventory snapshot and the existing Stage 7 forecast; it is decision support, not automatic replenishment. See [inventory snapshots](./docs/inventory-snapshots.md) and [stock-out risk](./docs/stock-out-risk.md).
-
-## AI Insights
-
-`/insights` generates evidence-backed interpretations from deterministic SalesSnap analytics. It does not calculate analytics, access the database directly, take autonomous actions, or issue operational instructions. See [AI Insights](./docs/ai-insights.md).
-
-## AI Analytics Chat
-
-`/chat` provides user-private conversations backed only by a controlled registry of tenant-aware SalesSnap analytics tools. Tool arguments are validated, tenant authority is injected by the server, history and tool calls are bounded, and factual answers expose persisted evidence. AI Chat cannot execute SQL, browse the web, change data, or act autonomously. See [AI Chat](./docs/ai-chat.md).
-
-## Local development
-
-Copy `.env.example` to `.env` and provide a local high-entropy `JWT_SECRET_KEY`. Never commit `.env` or real secrets.
+Requirements: Python 3.12+, Node.js 24+, npm, and PostgreSQL 17 or Docker.
 
 ```powershell
+git clone https://github.com/ysantosengineer/SalesSnap.git
+cd SalesSnap
+Copy-Item .env.example .env
 docker compose up -d postgres
 
 cd apps/api
 python -m pip install -e ".[dev]"
-uvicorn app.main:app --reload
+python -m alembic upgrade head
+python -m uvicorn app.main:app --reload
+```
 
-cd ../web
-npm install
+In another terminal:
+
+```powershell
+cd apps/web
+npm ci
 npm run dev
 ```
 
-The API documentation is available at `http://localhost:8000/docs`; the frontend runs at `http://localhost:3000`.
+- Web application: `http://localhost:3000`
+- OpenAPI documentation: `http://localhost:8000/docs`
+- Liveness: `http://localhost:8000/api/v1/health`
+- Readiness: `http://localhost:8000/api/v1/readiness`
+
+Set a local high-entropy `JWT_SECRET_KEY` in the untracked `.env`. AI remains disabled by default; enabling it additionally requires `OPENAI_API_KEY` and `AI_INSIGHTS_ENABLED=true`. See [local development](./docs/development.md) for database URL details and test setup.
 
 ## Validation
 
+The suite currently contains **178 backend tests**: 168 isolated tests plus 10 tests against real PostgreSQL. The production smoke flow exercises registration, login, sales import, dashboard, RFM, forecast, anomalies, inventory, stock risk, safe disabled AI states, and logout.
+
 ```powershell
 cd apps/api
-python -m pytest
 python -m ruff check .
+python -m pytest -m "not postgres"
+$env:POSTGRES_TEST_DATABASE_URL="postgresql+psycopg://.../sales_snap_test"
+python -m pytest -m postgres
+python -m pip_audit
 
 cd ../web
-npm run lint
+npm audit --omit=dev --audit-level=high
+npm run lint -- --max-warnings=0
 npm run build
 ```
 
-PostgreSQL integration tests use `POSTGRES_TEST_DATABASE_URL` and are skipped only when that local environment variable is not configured.
+GitHub Actions repeats these checks, scans tracked content for high-confidence secrets, applies migrations to PostgreSQL, and builds both production images.
 
-## Engineering rules
+## Production containers
 
-Read every Markdown file in [Skills](./Skills) before changing the project. These documents are the permanent record of architecture, security, data-ingestion, testing, and Git workflow decisions.
+`docker-compose.prod.yml` builds non-root, multi-stage images; waits for PostgreSQL; executes migrations in a one-shot service; then starts the API and web application behind readiness checks.
 
-## Roadmap
+```powershell
+docker compose --env-file .env.production -f docker-compose.prod.yml build
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d
+```
 
-Completed: Project Foundation, Database & Multi-tenancy, Authentication & Tenant Context, CSV Import & Data Ingestion, Sales Dashboard, RFM Segmentation, Demand Forecasting, Anomaly Detection, Stock-out Risk, AI Insights, and AI Chat.
+See [deployment](./docs/deployment.md), [operations](./docs/operations.md), and [production readiness](./docs/production-readiness.md). No public environment is currently deployed by this repository.
 
-See [docs/roadmap.md](./docs/roadmap.md) for the planned stages.
+## API surface
+
+All APIs are versioned under `/api/v1`. Main groups include `/auth`, `/datasets`, `/dashboard`, `/analytics/rfm`, `/analytics/forecast`, `/analytics/anomalies`, `/inventory`, `/analytics/stock-risk`, `/analytics/ai-insights`, and `/chat`. The running OpenAPI document at `/docs` is authoritative.
+
+## Repository structure
+
+```text
+SalesSnap/
+├── apps/
+│   ├── api/                 FastAPI, domain services, models, migrations, tests
+│   └── web/                 Next.js application and typed API clients
+├── Skills/                  permanent engineering and architectural rules
+├── docs/                    developer, product, analytics, AI, and operations docs
+├── .github/workflows/       CI quality gates
+├── docker-compose.yml       local PostgreSQL
+└── docker-compose.prod.yml  production-oriented stack
+```
+
+## Engineering decisions and limitations
+
+- Decimal money values are preserved in the backend; formatting belongs to the frontend.
+- PostgreSQL aggregates data before bounded Pandas or model processing.
+- Forecast evaluation is chronological and compared with a mandatory naive baseline.
+- Anomaly detection identifies unusual behavior, not causation.
+- Inventory represents point-in-time snapshots, not a warehouse ledger.
+- AI, forecasts, anomalies, and stock risk are decision support, not autonomous operations.
+- The current in-memory rate limiter assumes one API instance; horizontal scaling requires a future shared-limiter design.
+- The codebase is production-ready, but cloud hosting, TLS termination, managed backups, DNS, and alert delivery depend on the chosen deployment platform.
+
+## Project governance
+
+Before changing the project, read every Markdown file in [Skills](./Skills). Those files are the permanent source of architectural, security, testing, database, AI, production, and Git workflow decisions. See the completed delivery sequence in [the roadmap](./docs/roadmap.md).
+
+## License
+
+Licensed under the [MIT License](./LICENSE).
