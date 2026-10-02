@@ -12,7 +12,22 @@ Keep APIs stateless where practical and the database as the source of truth. Pla
 
 The initial tenancy implementation is shared database, shared schema, and a `company_id` discriminator. A company owns datasets, products, customers, and sales; services must make the tenant scope explicit rather than relying on implicit global context.
 
-AI Chat follows a controlled flow: User → Chat Orchestrator → OpenAI tool selection → SalesSnap tool registry → tenant-aware analytics services → structured facts → LLM interpretation → evidence-backed answer. The LLM does not access PostgreSQL directly.
+AI Chat follows a controlled flow:
+
+```text
+Authenticated user
+  → user-owned bounded conversation context
+  → centralized OpenAI provider
+  → controlled tool selection
+  → strict Pydantic argument validation
+  → server-injected tenant context
+  → existing tenant-aware analytics services
+  → bounded structured facts
+  → OpenAI interpretation
+  → persisted evidence-backed answer
+```
+
+The LLM cannot access PostgreSQL or SQLAlchemy, choose tenant or user authority, register tools, write business data, browse the web, or execute SQL. PostgreSQL is the source of truth for conversations and messages; the provider does not own conversation history.
 
 CSV ingestion is synchronous in the modular monolith: authenticated upload → parser → Dataset lifecycle → tenant-scoped persistence → import summary. It is intentionally separate from analytics and presentation.
 

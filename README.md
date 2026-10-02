@@ -1,6 +1,6 @@
 # SalesSnap
 
-SalesSnap is a modular SaaS application for sales intelligence. It provides tenant-aware authentication, validated sales CSV ingestion, descriptive analytics, forecasting, anomaly detection, and stock-out risk. Generative AI is planned for a later stage.
+SalesSnap is a modular SaaS application for sales intelligence. It provides tenant-aware authentication, validated sales CSV ingestion, descriptive analytics, forecasting, anomaly detection, stock-out risk, AI insights, and a controlled analytics chat.
 
 ## Current capabilities
 
@@ -15,6 +15,7 @@ SalesSnap is a modular SaaS application for sales intelligence. It provides tena
 - Tenant-scoped explainable sales anomaly detection for unusual demand spikes and drops.
 - Inventory snapshot CSV import and tenant-scoped stock-out risk projections.
 - On-demand, evidence-backed AI interpretation of existing analytics.
+- User-private AI Analytics Chat with controlled tool calling and persisted evidence-backed answers.
 
 ## Architecture
 
@@ -58,7 +59,11 @@ Authenticated users can import point-in-time inventory at `/inventory` and evalu
 
 ## AI Insights
 
-`/insights` generates evidence-backed interpretations from deterministic SalesSnap analytics. It does not provide AI Chat, database access, autonomous actions, forecasts, or recommendations with operational quantities. See [AI Insights](./docs/ai-insights.md).
+`/insights` generates evidence-backed interpretations from deterministic SalesSnap analytics. It does not calculate analytics, access the database directly, take autonomous actions, or issue operational instructions. See [AI Insights](./docs/ai-insights.md).
+
+## AI Analytics Chat
+
+`/chat` provides user-private conversations backed only by a controlled registry of tenant-aware SalesSnap analytics tools. Tool arguments are validated, tenant authority is injected by the server, history and tool calls are bounded, and factual answers expose persisted evidence. AI Chat cannot execute SQL, browse the web, change data, or act autonomously. See [AI Chat](./docs/ai-chat.md).
 
 ## Local development
 
@@ -98,6 +103,6 @@ Read every Markdown file in [Skills](./Skills) before changing the project. Thes
 
 ## Roadmap
 
-Completed: Project Foundation, Database & Multi-tenancy, Authentication & Tenant Context, CSV Import & Data Ingestion, Sales Dashboard, RFM Segmentation, Demand Forecasting, Anomaly Detection, and Stock-out Risk.
+Completed: Project Foundation, Database & Multi-tenancy, Authentication & Tenant Context, CSV Import & Data Ingestion, Sales Dashboard, RFM Segmentation, Demand Forecasting, Anomaly Detection, Stock-out Risk, AI Insights, and AI Chat.
 
 See [docs/roadmap.md](./docs/roadmap.md) for the planned stages.
