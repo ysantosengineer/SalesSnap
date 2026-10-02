@@ -21,6 +21,17 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function tokenExpiryDelay(token: string): number {
+  try {
+    const encoded = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = encoded.padEnd(Math.ceil(encoded.length / 4) * 4, "=");
+    const payload = JSON.parse(window.atob(padded)) as { exp?: number };
+    return typeof payload.exp === "number" ? payload.exp * 1000 - Date.now() : 0;
+  } catch {
+    return 0;
+  }
+}
+
 export function AuthProvider({ children }: Readonly<{ children: React.ReactNode }>) {
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -39,6 +50,16 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
       .finally(() => setIsLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (!accessToken) return;
+    const delay = tokenExpiryDelay(accessToken);
+    const timer = window.setTimeout(() => {
+      setUser(null);
+      setAccessToken(null);
+    }, Math.max(delay, 0));
+    return () => window.clearTimeout(timer);
+  }, [accessToken]);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -55,9 +76,12 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
         setAccessToken(session.access_token);
       },
       logout: async () => {
-        await logoutRequest();
-        setUser(null);
-        setAccessToken(null);
+        try {
+          await logoutRequest();
+        } finally {
+          setUser(null);
+          setAccessToken(null);
+        }
       },
     }),
     [accessToken, isLoading, user],
