@@ -19,6 +19,7 @@ const contentSecurityPolicy = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  agentRules: false,
   async headers() {
     return [
       {
