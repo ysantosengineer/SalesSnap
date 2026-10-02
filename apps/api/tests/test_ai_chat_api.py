@@ -153,3 +153,15 @@ def test_invalid_provider_tool_is_controlled_error_not_500(chat_api, monkeypatch
         json={"message": "Hi"},
     )
     assert response.status_code == 503
+
+
+def test_conversation_listing_is_bounded_and_paginated(chat_api):
+    client, *_ = chat_api
+    for title in ("First", "Second", "Third"):
+        assert client.post("/api/v1/chat/conversations", json={"title": title}).status_code == 201
+
+    response = client.get("/api/v1/chat/conversations?limit=1&offset=1")
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert client.get("/api/v1/chat/conversations?limit=101").status_code == 422

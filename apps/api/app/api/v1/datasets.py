@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.api.v1.auth import get_current_user
@@ -50,13 +50,16 @@ async def import_csv(
 
 @router.get("", response_model=list[DatasetSummaryResponse])
 def list_datasets(
-    current_user: User = Depends(get_current_user), session: Session = Depends(get_db_session)
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_db_session),
 ) -> list[DatasetSummaryResponse]:
     return [
         DatasetSummaryResponse(
             id=item.id, name=item.name, status=item.status, created_at=item.created_at
         )
-        for item in get_company_datasets(session, current_user.company_id)
+        for item in get_company_datasets(session, current_user.company_id, limit, offset)
     ]
 
 

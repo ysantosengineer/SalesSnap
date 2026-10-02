@@ -102,7 +102,9 @@ def list_stock_risk_results(
     product_statement = (
         select(Product).where(Product.company_id == company_id).order_by(Product.name.asc())
     )
-    total = len(list(session.scalars(product_statement)))
+    total = session.scalar(
+        select(func.count()).select_from(Product).where(Product.company_id == company_id)
+    ) or 0
     if limit is not None:
         product_statement = product_statement.limit(limit).offset(offset)
     products = list(session.scalars(product_statement))

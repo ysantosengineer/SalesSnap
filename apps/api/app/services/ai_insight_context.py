@@ -28,7 +28,7 @@ def build_ai_insight_context(
     risks, _ = list_stock_risk_results(session, company_id, 30, limit=limit)
     forecasts = []
     anomalies = []
-    for item in list_forecast_products(session, company_id)[:limit]:
+    for item in list_forecast_products(session, company_id, limit=limit):
         product = get_forecast_product(session, company_id, item.id)
         if product is None:
             continue
