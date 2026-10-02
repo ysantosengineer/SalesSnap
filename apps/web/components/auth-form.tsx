@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 import { AuthApiError } from "@/lib/auth-api";
@@ -8,6 +9,7 @@ import { useAuth } from "@/components/auth-provider";
 
 export function AuthForm({ mode }: Readonly<{ mode: "login" | "register" }>) {
   const { login, register } = useAuth();
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isRegister = mode === "register";
@@ -23,7 +25,7 @@ export function AuthForm({ mode }: Readonly<{ mode: "login" | "register" }>) {
       } else {
         await login(String(formData.get("email")), String(formData.get("password")));
       }
-      window.location.assign("/dashboard");
+      router.push("/dashboard");
     } catch (cause) {
       setError(cause instanceof AuthApiError ? cause.message : "Unable to continue. Try again.");
     } finally {

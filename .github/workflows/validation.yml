@@ -3,7 +3,14 @@ name: Validation
 on:
   pull_request:
   push:
-    branches: [master]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   backend:
@@ -12,13 +19,17 @@ jobs:
       run:
         working-directory: apps/api
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: apps/api/pyproject.toml
+      - run: python -m pip install --upgrade pip
       - run: python -m pip install -e ".[dev]" ruff
       - run: python -m ruff check .
-      - run: python -m pytest
+      - run: python -m pytest -m "not postgres"
+      - run: python -m pip_audit
 
   frontend:
     runs-on: ubuntu-latest
@@ -26,12 +37,77 @@ jobs:
       run:
         working-directory: apps/web
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
       - run: npm ci
-      - run: npm run lint
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm run lint -- --max-warnings=0
       - run: npm run build
+
+  postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: sales_snap_test
+          POSTGRES_USER: sales_snap
+          POSTGRES_PASSWORD: test-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sales_snap -d sales_snap_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+psycopg://sales_snap:test-only-password@localhost:5432/sales_snap_test
+      POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://sales_snap:test-only-password@localhost:5432/sales_snap_test
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: apps/api/pyproject.toml
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev]"
+      - run: alembic upgrade head
+      - run: python -m pytest -m postgres
+
+  production-images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: docker build --tag sales-snap-api:validation apps/api
+      - run: >-
+          docker build
+          --build-arg NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+          --tag sales-snap-web:validation
+          apps/web
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Reject tracked environment files
+        run: |
+          if git ls-files | grep -E '(^|/)\.env($|\.)' | grep -v '\.env\.example$'; then
+            echo "Tracked environment file detected"
+            exit 1
+          fi
+      - name: Scan tracked content for high-confidence secret patterns
+        run: |
+          if git grep -I -n -E 'sk-(proj-)?[A-Za-z0-9_-]{20,}|gh[pousr]_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY' -- . ':!*.lock'; then
+            echo "Potential secret detected"
+            exit 1
+          fi
