@@ -136,6 +136,8 @@ docker compose --env-file .env.production -f docker-compose.prod.yml up -d
 
 See [deployment](./docs/deployment.md), [operations](./docs/operations.md), and [production readiness](./docs/production-readiness.md). No public environment is currently deployed by this repository.
 
+The product interface follows a documented visual identity, shared component foundation, explicit data states, and responsive navigation architecture. See the [design system guide](./docs/design-system.md).
+
 ## API surface
 
 All APIs are versioned under `/api/v1`. Main groups include `/auth`, `/datasets`, `/dashboard`, `/analytics/rfm`, `/analytics/forecast`, `/analytics/anomalies`, `/inventory`, `/analytics/stock-risk`, `/analytics/ai-insights`, and `/chat`. The running OpenAPI document at `/docs` is authoritative.
