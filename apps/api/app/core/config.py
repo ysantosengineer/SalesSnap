@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,9 +24,9 @@ class Settings(BaseSettings):
     ai_insights_enabled: bool = False
     ai_insights_timeout_seconds: int = 30
     ai_insights_max_items_per_section: int = 5
-    ai_chat_history_messages: int = 10
-    ai_chat_max_tool_calls: int = 5
-    ai_chat_max_output_tokens: int = 800
+    ai_chat_history_messages: int = Field(default=10, ge=1, le=40)
+    ai_chat_max_tool_calls: int = Field(default=5, ge=1, le=10)
+    ai_chat_max_output_tokens: int = Field(default=800, ge=64, le=4000)
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
