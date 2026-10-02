@@ -14,7 +14,7 @@ flowchart LR
 
 ## Responsibilities
 
-- Next.js provides authentication screens, module navigation, loading/error/empty states, and typed REST clients. It does not calculate business analytics.
+- Next.js provides authentication screens, a responsive domain-grouped application shell, reusable interface primitives, explicit loading/error/empty/success states, and typed REST clients. It does not calculate business analytics.
 - FastAPI authenticates requests, derives company authority, validates inputs, orchestrates services, applies rate limits, and returns versioned schemas.
 - PostgreSQL is the persistence source of truth and performs tenant filtering, joins, constraints, ordering, and analytical aggregation.
 - Pandas handles bounded CSV and time-series transformations after database scoping.

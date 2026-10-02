@@ -20,6 +20,8 @@ Generative-AI decisions are permanent project rules in `ai-standards.md`; read i
 
 Production configuration, deployment, observability, dependency, and release decisions are permanent project rules in `production-standards.md`; read it before changing runtime hardening, containers, health checks, CI gates, or operational procedures.
 
+Visual identity, interface components, responsive behavior, feedback states, and application navigation are permanent project rules in `design-system-standards.md`; read it before creating or changing frontend UI.
+
 Before starting any development stage:
 
 1. Read every Markdown file inside /Skills.
