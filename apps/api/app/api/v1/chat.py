@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.v1.auth import get_current_user
@@ -42,11 +42,14 @@ def create_chat_conversation(
 
 @router.get("/conversations", response_model=list[ConversationSummary])
 def get_chat_conversations(
-    session: Session = Depends(get_db_session), user: User = Depends(get_current_user)
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    session: Session = Depends(get_db_session),
+    user: User = Depends(get_current_user),
 ) -> list[ConversationSummary]:
     return [
         ConversationSummary.model_validate(item, from_attributes=True)
-        for item in list_conversations(session, user.company_id, user.id)
+        for item in list_conversations(session, user.company_id, user.id, limit, offset)
     ]
 
 

@@ -178,13 +178,20 @@ def recursive_forecast(
     return pd.DataFrame(predictions)
 
 
-def list_forecast_products(session: Session, company_id: uuid.UUID) -> list[ForecastProduct]:
+def list_forecast_products(
+    session: Session,
+    company_id: uuid.UUID,
+    limit: int = 100,
+    offset: int = 0,
+) -> list[ForecastProduct]:
     rows = session.execute(
         select(Product, func.min(Sale.sale_date), func.max(Sale.sale_date))
         .join(Sale, Sale.product_id == Product.id)
         .where(Product.company_id == company_id, Sale.company_id == company_id)
         .group_by(Product.id)
         .order_by(Product.name.asc())
+        .limit(limit)
+        .offset(offset)
     )
     products = []
     for product, first_date, last_date in rows:

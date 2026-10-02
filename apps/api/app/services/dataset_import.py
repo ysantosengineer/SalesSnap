@@ -119,11 +119,15 @@ def get_dataset(session: Session, company_id: uuid.UUID, dataset_id: uuid.UUID) 
     )
 
 
-def get_company_datasets(session: Session, company_id: uuid.UUID) -> list[Dataset]:
+def get_company_datasets(
+    session: Session, company_id: uuid.UUID, limit: int = 50, offset: int = 0
+) -> list[Dataset]:
     return list(
         session.scalars(
             select(Dataset)
             .where(Dataset.company_id == company_id)
             .order_by(Dataset.created_at.desc())
+            .limit(limit)
+            .offset(offset)
         )
     )

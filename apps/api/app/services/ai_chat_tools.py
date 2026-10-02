@@ -178,7 +178,11 @@ def _anomalies(session: Session, company_id: uuid.UUID, args: AnomaliesArgs) -> 
     products = (
         [get_forecast_product(session, company_id, args.product_id)]
         if args.product_id
-        else list(session.scalars(select(Product).where(Product.company_id == company_id)))
+        else list(
+            session.scalars(
+                select(Product).where(Product.company_id == company_id).limit(100)
+            )
+        )
     )
     findings: list[dict[str, Any]] = []
     for product in (item for item in products if item is not None):

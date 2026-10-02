@@ -21,9 +21,12 @@ router = APIRouter(prefix="/analytics/forecast", tags=["analytics"])
 
 @router.get("/products", response_model=list[ForecastProduct])
 def products(
-    current_user: User = Depends(get_current_user), session: Session = Depends(get_db_session)
+    limit: int = Query(default=100, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_db_session),
 ) -> list[ForecastProduct]:
-    return list_forecast_products(session, current_user.company_id)
+    return list_forecast_products(session, current_user.company_id, limit, offset)
 
 
 @router.get("/products/{product_id}", response_model=ProductForecast)

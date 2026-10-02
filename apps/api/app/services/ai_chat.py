@@ -31,13 +31,19 @@ def create_conversation(
 
 
 def list_conversations(
-    session: Session, company_id: uuid.UUID, user_id: uuid.UUID
+    session: Session,
+    company_id: uuid.UUID,
+    user_id: uuid.UUID,
+    limit: int = 50,
+    offset: int = 0,
 ) -> list[ChatConversation]:
     return list(
         session.scalars(
             select(ChatConversation)
             .where(ChatConversation.company_id == company_id, ChatConversation.user_id == user_id)
             .order_by(ChatConversation.updated_at.desc())
+            .limit(limit)
+            .offset(offset)
         )
     )
 
