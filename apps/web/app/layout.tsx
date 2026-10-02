@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 
-import { AppNavigation } from "@/components/app-navigation";
+import { AppShell } from "@/components/app-navigation";
 import { AuthProvider } from "@/components/auth-provider";
 
 import "./globals.css";
@@ -10,13 +11,12 @@ export const metadata: Metadata = {
   description: "Multi-tenant sales intelligence with analytics, machine learning, and AI.",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en">
       <body>
         <AuthProvider>
-          <AppNavigation />
-          {children}
+          <AppShell>{children}</AppShell>
         </AuthProvider>
       </body>
     </html>
