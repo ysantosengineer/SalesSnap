@@ -4,8 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.router import api_router
 from app.core.config import get_settings
 
-app = FastAPI(title="SalesSnap API")
 settings = get_settings()
+app = FastAPI(title="SalesSnap API", debug=settings.debug)
 
 
 @app.middleware("http")
@@ -25,7 +25,7 @@ async def reject_large_dataset_requests(request: Request, call_next):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
