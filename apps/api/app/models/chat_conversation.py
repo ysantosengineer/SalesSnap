@@ -1,7 +1,7 @@
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, String, Uuid
+from sqlalchemy import ForeignKey, Index, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
@@ -17,6 +17,14 @@ class ChatConversation(UUIDTimestampMixin, Base):
     """A user-private, company-scoped AI chat conversation."""
 
     __tablename__ = "chat_conversations"
+    __table_args__ = (
+        Index(
+            "ix_chat_conversations_company_user_updated",
+            "company_id",
+            "user_id",
+            "updated_at",
+        ),
+    )
 
     company_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("companies.id"), nullable=False, index=True

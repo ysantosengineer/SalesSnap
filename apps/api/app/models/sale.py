@@ -23,6 +23,8 @@ class Sale(UUIDTimestampMixin, Base):
         CheckConstraint("unit_price >= 0", name="ck_sales_unit_price_nonnegative"),
         CheckConstraint("revenue >= 0", name="ck_sales_revenue_nonnegative"),
         Index("ix_sales_company_sale_date", "company_id", "sale_date"),
+        Index("ix_sales_company_product_date", "company_id", "product_id", "sale_date"),
+        Index("ix_sales_company_customer_date", "company_id", "customer_id", "sale_date"),
     )
 
     company_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("companies.id"), nullable=False)
