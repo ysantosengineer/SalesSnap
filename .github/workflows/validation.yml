@@ -65,6 +65,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
+      DATABASE_URL: postgresql+psycopg://sales_snap:test-only-password@localhost:5432/sales_snap_test
       POSTGRES_TEST_DATABASE_URL: postgresql+psycopg://sales_snap:test-only-password@localhost:5432/sales_snap_test
     defaults:
       run:
