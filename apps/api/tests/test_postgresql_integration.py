@@ -34,6 +34,17 @@ def test_alembic_migrates_empty_postgres_database() -> None:
         assert {"companies", "datasets", "products", "customers", "sales"} <= set(
             inspect(engine).get_table_names()
         )
+        expected_indexes = {
+            "datasets": {"ix_datasets_company_created_at"},
+            "sales": {
+                "ix_sales_company_product_date",
+                "ix_sales_company_customer_date",
+            },
+            "chat_conversations": {"ix_chat_conversations_company_user_updated"},
+            "chat_messages": {"ix_chat_messages_conversation_created"},
+        }
+        for table, names in expected_indexes.items():
+            assert names <= {item["name"] for item in inspect(engine).get_indexes(table)}
         with Session(engine) as session:
             company_a = Company(name="PostgreSQL Company A")
             company_b = Company(name="PostgreSQL Company B")
@@ -70,6 +81,12 @@ def test_alembic_migrates_empty_postgres_database() -> None:
             with pytest.raises(IntegrityError):
                 session.commit()
             session.rollback()
+        engine.dispose()
+        command.downgrade(config, "base")
+        command.upgrade(config, "head")
+        verification_engine = create_engine(database_url)
+        assert "chat_messages" in inspect(verification_engine).get_table_names()
+        verification_engine.dispose()
     finally:
         command.downgrade(config, "base")
         if previous_url is None:

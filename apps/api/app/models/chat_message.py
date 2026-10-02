@@ -2,7 +2,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Literal
 
-from sqlalchemy import JSON, CheckConstraint, DateTime, ForeignKey, String, Text, Uuid, func
+from sqlalchemy import JSON, CheckConstraint, DateTime, ForeignKey, Index, String, Text, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
@@ -18,6 +18,12 @@ class ChatMessage(UUIDTimestampMixin, Base):
     __tablename__ = "chat_messages"
     __table_args__ = (
         CheckConstraint("role IN ('user', 'assistant')", name="ck_chat_messages_role"),
+        Index(
+            "ix_chat_messages_conversation_created",
+            "conversation_id",
+            "created_at",
+            "id",
+        ),
     )
 
     conversation_id: Mapped[uuid.UUID] = mapped_column(
