@@ -1,11 +1,15 @@
 import json
+import logging
 from dataclasses import dataclass, field
 from functools import lru_cache
+from time import perf_counter
 from typing import Any
 
 from app.core.config import Settings
 from app.prompts.ai_insights import AI_INSIGHTS_SYSTEM_PROMPT
 from app.schemas.ai_insights import AIInsightsResponse
+
+logger = logging.getLogger("sales_snap.ai")
 
 
 class AIProviderDisabledError(Exception):
@@ -43,6 +47,10 @@ def generate_structured_insights(
 ) -> AIInsightsResponse:
     if not settings.ai_insights_enabled or not settings.openai_api_key:
         raise AIProviderDisabledError
+    started_at = perf_counter()
+    logger.info(
+        "ai_provider_called", extra={"operation": "insights", "model": settings.openai_model}
+    )
     try:
         client = _client(settings.openai_api_key, settings.ai_insights_timeout_seconds)
         response = client.responses.parse(
@@ -55,10 +63,27 @@ def generate_structured_insights(
         )
         if response.output_parsed is None:
             raise AIProviderUnavailableError
+        logger.info(
+            "ai_provider_completed",
+            extra={
+                "operation": "insights",
+                "model": settings.openai_model,
+                "duration_ms": round((perf_counter() - started_at) * 1000, 2),
+            },
+        )
         return response.output_parsed
     except AIProviderDisabledError:
         raise
     except Exception as error:
+        logger.warning(
+            "ai_provider_failed",
+            extra={
+                "operation": "insights",
+                "model": settings.openai_model,
+                "duration_ms": round((perf_counter() - started_at) * 1000, 2),
+                "error_type": type(error).__name__,
+            },
+        )
         raise AIProviderUnavailableError from error
 
 
@@ -68,6 +93,8 @@ def generate_chat_response(
     """Invoke the centralized OpenAI provider without giving it database access."""
     if not settings.ai_insights_enabled or not settings.openai_api_key:
         raise AIProviderDisabledError
+    started_at = perf_counter()
+    logger.info("ai_provider_called", extra={"operation": "chat", "model": settings.openai_model})
     try:
         client = _client(settings.openai_api_key, settings.ai_insights_timeout_seconds)
         response = client.responses.create(
@@ -90,14 +117,33 @@ def generate_chat_response(
                         arguments=json.loads(item.arguments),
                     )
                 )
-        return ChatProviderResponse(
+        result = ChatProviderResponse(
             text=response.output_text or "",
             tool_calls=calls,
             output_items=[
                 item.model_dump(mode="json", exclude_none=True) for item in response.output
             ],
         )
+        logger.info(
+            "ai_provider_completed",
+            extra={
+                "operation": "chat",
+                "model": settings.openai_model,
+                "duration_ms": round((perf_counter() - started_at) * 1000, 2),
+                "tool_calls": len(result.tool_calls),
+            },
+        )
+        return result
     except AIProviderDisabledError:
         raise
     except Exception as error:
+        logger.warning(
+            "ai_provider_failed",
+            extra={
+                "operation": "chat",
+                "model": settings.openai_model,
+                "duration_ms": round((perf_counter() - started_at) * 1000, 2),
+                "error_type": type(error).__name__,
+            },
+        )
         raise AIProviderUnavailableError from error
