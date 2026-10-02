@@ -1,11 +1,14 @@
 import uuid
+from datetime import UTC, datetime, timedelta
 
+import jwt
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from app.api.v1.auth import get_current_company_id
+from app.core.config import get_settings
 from app.core.security import create_access_token
 from app.db.session import Base, get_db_session
 from app.main import app
@@ -82,3 +85,58 @@ def test_authenticated_user_keeps_its_company_context() -> None:
         assert response.json()["company"]["id"] == str(acme_user.company_id)
         assert response.json()["company"]["id"] != str(beta_user.company_id)
         assert get_current_company_id(acme_user) == uuid.UUID(response.json()["company"]["id"])
+
+
+def test_expired_access_token_is_rejected() -> None:
+    with create_session() as session:
+        user = register_user(session, "Acme", "expired@acme.com", "secure-password")
+        settings = get_settings()
+        token = jwt.encode(
+            {
+                "sub": str(user.id),
+                "type": "access",
+                "exp": datetime.now(UTC) - timedelta(seconds=1),
+            },
+            settings.jwt_secret_key,
+            algorithm=settings.jwt_algorithm,
+        )
+        app.dependency_overrides[get_db_session] = lambda: session
+        try:
+            response = TestClient(app).get(
+                "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}
+            )
+        finally:
+            app.dependency_overrides.clear()
+
+        assert response.status_code == 401
+        assert response.json() == {"detail": "Invalid authentication token"}
+
+
+def test_production_refresh_cookie_is_secure(monkeypatch) -> None:
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv(
+        "DATABASE_URL", "postgresql+psycopg://app:secret@postgres:5432/sales_snap"
+    )
+    monkeypatch.setenv("JWT_SECRET_KEY", "a-production-secret-with-at-least-32-characters")
+    monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://sales.example.com")
+    get_settings.cache_clear()
+    with create_session() as session:
+        app.dependency_overrides[get_db_session] = lambda: session
+        try:
+            response = TestClient(app).post(
+                "/api/v1/auth/register",
+                json={
+                    "company_name": "Acme",
+                    "email": "secure-cookie@acme.com",
+                    "password": "secure-password",
+                },
+            )
+        finally:
+            app.dependency_overrides.clear()
+            get_settings.cache_clear()
+
+    cookie = response.headers["set-cookie"].lower()
+    assert "httponly" in cookie
+    assert "secure" in cookie
+    assert "samesite=lax" in cookie
+    assert "path=/api/v1/auth" in cookie
